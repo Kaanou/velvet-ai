@@ -1,7 +1,8 @@
 (() => {
   // Velvet AI — moteur récent uniquement
   const KEY = 'velvet-pollinations-key';
-  const MODEL = 'openai';
+  const CHAT_MODEL = 'unity';
+  const IMAGE_MODEL = 'flux';
   const key = () => sessionStorage.getItem(KEY) || '';
   const currentGirl = () => typeof current !== 'undefined' && current !== null ? girls[current] : null;
   const $ = id => document.getElementById(id);
@@ -46,7 +47,7 @@
   box.querySelector('#testk').onclick = async () => { const v = vk.value.trim() || key(); if (!v) return status('Aucune clé à tester.'); status('Test…'); try { const r = await request(v, [{role:'user',content:'Réponds uniquement OK.'}], 12); if (!r) throw Error('Réponse vide du modèle.'); status('✓ IA opérationnelle.'); } catch(e) { status('✕ '+e.message); } };
 
   async function request(token, messages, maxTokens = 500) {
-    const r = await fetch('https://gen.pollinations.ai/v1/chat/completions', {method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,messages,temperature:0.92,max_tokens:maxTokens})});
+    const r = await fetch('https://gen.pollinations.ai/v1/chat/completions', {method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:CHAT_MODEL,messages,temperature:0.92,max_tokens:maxTokens})});
     const raw = await r.text();
     let data;
     try { data = JSON.parse(raw); } catch { throw Error('Réponse API invalide.'); }
@@ -120,18 +121,17 @@ COHÉRENCE : utilise l’historique, évite les répétitions et ne réutilise p
     const p = `Photographie hyperréaliste prise au smartphone, selfie spontané de ${g.name}, femme adulte de ${g.age} ans. ${g.bio}. ${g.likes.join(', ')}. ${prompt || 'selfie du moment'}. Visage naturel et cohérent, peau avec texture réaliste et petites imperfections, expression vivante, regard vers l’objectif, cheveux naturels avec quelques mèches irrégulières, lumière ambiante réaliste, exposition imparfaite mais crédible, profondeur de champ légère, cadrage smartphone à bout de bras, perspective et proportions naturelles, arrière-plan quotidien crédible, aucun effet studio, aucun rendu plastique, aucune esthétique CGI, photographie documentaire moderne, tenue élégante et séduisante mais non explicite.`;
     addTyping();
     try {
-      const r = await fetch('https://gen.pollinations.ai/v1/images/generations',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:'flux',prompt:p,n:1,size:'1024x1024'})});
+      const r = await fetch('https://gen.pollinations.ai/v1/images/generations',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:IMAGE_MODEL,prompt:p,n:1,size:'1024x1024'})});
       const raw = await r.text(); let data;
       try { data = JSON.parse(raw); } catch { throw Error('Réponse image invalide.'); }
       if (!r.ok) throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
-      const item = data?.data?.[0]; const src = item?.url || (item?.b64_json ? 'data:image/png;base64,'+item.b64_json : null);
-      if (!src) throw Error('Aucune image retournée.');
-      removeTyping(); history[g.id].push({role:'ai',image:src}); save(); renderMessages();
-    } catch(e) {
-      removeTyping(); history[g.id].push({role:'ai',text:'Je n’ai pas réussi à générer l’image cette fois. Réessaie.'}); save(); renderMessages(); console.error(e);
-    }
+      const item = data?.data?.[0];
+      const src = item?.url;
+      removeTyping();
+      if (!src) throw Error('Aucune image reçue.');
+      history[g.id]=history[g.id]||[];
+      history[g.id].push({role:'ai',text:'📷',image:src});
+      save(); renderMessages();
+    } catch(e) { removeTyping(); console.error(e); history[g.id]=history[g.id]||[]; history[g.id].push({role:'ai',text:'Je n’arrive pas à générer la photo pour le moment.'}); save(); renderMessages(); }
   };
 })();
-
-/* VELVET_GALLERY_UI_LOADER */
-(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();
