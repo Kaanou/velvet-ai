@@ -1,16 +1,31 @@
 (() => {
   const KEY = 'velvet-pollinations-key';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity' };
-  const DEFAULTS = { intensity:'hardcore', chatModel:'x-ai/grok-4.20', imageModel:'flux', imageSize:'768x1024', forceNude:'1', creativity:'0.95' };
+  // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
+  const DEFAULTS = { intensity:'hardcore', chatModel:'x-ai/grok-4.20', imageModel:'zimage', imageSize:'768x1024', forceNude:'1', creativity:'0.95' };
   const get = k => sessionStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => sessionStorage.setItem(CFG[k], v);
   const key = () => sessionStorage.getItem(KEY) || '';
   const getIntensity = () => get('intensity');
   const currentGirl = () => (typeof current !== 'undefined' && current !== null) ? girls[current] : null;
   const $ = id => document.getElementById(id);
-  const CHAT_MODELS = [{id:'x-ai/grok-4.20',label:'Grok 4.20 (zéro censure)'},{id:'x-ai/grok-4.6',label:'Grok 4.6'},{id:'mistralai/mistral-small-4',label:'Mistral Small'}];
-  const IMAGE_MODELS = [{id:'flux',label:'Flux Schnell'},{id:'flux-klein',label:'Flux Klein'},{id:'z-image-turbo',label:'Z-Image Turbo'}];
-  const SIZES = [{id:'512x768',label:'Petit'},{id:'768x1024',label:'Standard'},{id:'1024x1280',label:'HD'}];
+  const CHAT_MODELS = [
+    {id:'x-ai/grok-4.20',label:'Grok 4.20 (zéro censure)'},
+    {id:'x-ai/grok-4.6',label:'Grok 4.6'},
+    {id:'mistralai/mistral-small-4',label:'Mistral Small'}
+  ];
+  // Modèles image sans filtre Azure sur Pollinations (self-hosted)
+  const IMAGE_MODELS = [
+    {id:'zimage',label:'★ Z-Image (hyper-réel NSFW)'},
+    {id:'flux',label:'Flux Schnell (rapide)'},
+    {id:'klein',label:'Flux Klein (détail)'},
+    {id:'turbo',label:'SDXL Turbo (rapide)'}
+  ];
+  const SIZES = [
+    {id:'512x768',label:'Petit (rapide)'},
+    {id:'768x1024',label:'Standard'},
+    {id:'1024x1280',label:'HD'}
+  ];
 
   const btn = document.createElement('button');
   btn.textContent = '🧠 IA';
@@ -39,7 +54,7 @@
     div.id = 'velvet-adv-menu';
     div.style.cssText = 'margin:8px 0;padding-top:8px;border-top:1px solid #302b2d';
     const opt = (list, cur) => list.map(m => '<option value="'+m.id+'" '+(m.id===cur?'selected':'')+'>'+m.label+'</option>').join('');
-    div.innerHTML = '<div style="font-size:11px;color:#999;margin-bottom:6px;font-weight:700">Niveau</div><div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px"><button data-level="soft" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">Soft</button><button data-level="sensuel" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">Sensuel / Lingerie</button><button data-level="hardcore" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">🔥 Hardcore Porno</button></div><div style="font-size:11px;color:#999;margin:8px 0 6px;font-weight:700">⚙ Avancé</div><label style="font-size:10px;color:#888">Modèle chat</label><select id="v-chat" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(CHAT_MODELS,get('chatModel'))+'</select><label style="font-size:10px;color:#888">Modèle image</label><select id="v-img" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(IMAGE_MODELS,get('imageModel'))+'</select><label style="font-size:10px;color:#888">Taille</label><select id="v-size" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(SIZES,get('imageSize'))+'</select><label style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;margin:6px 0;cursor:pointer"><input id="v-nude" type="checkbox" '+(get('forceNude')==='1'?'checked':'')+' style="accent-color:#ef4444"> Forcer nudes</label><div id="v-st" style="font-size:10px;color:#777;margin-top:6px"></div>';
+    div.innerHTML = '<div style="font-size:11px;color:#999;margin-bottom:6px;font-weight:700">Niveau</div><div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px"><button data-level="soft" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">Soft</button><button data-level="sensuel" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">Sensuel / Lingerie</button><button data-level="hardcore" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">🔥 Hardcore Porno</button></div><div style="font-size:11px;color:#999;margin:8px 0 6px;font-weight:700">⚙ Avancé</div><label style="font-size:10px;color:#888">Modèle chat</label><select id="v-chat" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(CHAT_MODELS,get('chatModel'))+'</select><label style="font-size:10px;color:#888">Modèle image (NSFW)</label><select id="v-img" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(IMAGE_MODELS,get('imageModel'))+'</select><label style="font-size:10px;color:#888">Taille</label><select id="v-size" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(SIZES,get('imageSize'))+'</select><label style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;margin:6px 0;cursor:pointer"><input id="v-nude" type="checkbox" '+(get('forceNude')==='1'?'checked':'')+' style="accent-color:#ef4444"> Forcer nudes</label><div id="v-st" style="font-size:10px;color:#777;margin-top:6px"></div>';
     settings.insertBefore(div, settings.firstChild);
     const hl = () => { const lvl = getIntensity(); div.querySelectorAll('.v-lvl').forEach(b => { b.style.borderColor = b.dataset.level===lvl?'#ef4444':'#383235'; b.style.background = b.dataset.level===lvl?'#2a1515':'#1b191a'; }); document.getElementById('v-st').textContent = get('chatModel').split('/').pop()+' · '+get('imageModel'); };
     div.querySelectorAll('.v-lvl').forEach(b => b.onclick = () => { set('intensity', b.dataset.level); hl(); });
@@ -94,34 +109,34 @@
   const pick = a => a[Math.floor(Math.random()*a.length)];
   function randomLook(){ return [pick(HAIR),pick(FACE),pick(BODY),pick(SKIN),pick(EYES)].join(', '); }
 
-  const REALISM = 'shot on iPhone 15 Pro, candid real phone photo, natural skin pores, soft light, mild grain, unique different face every time';
-  const FULL = 'detailed face lips tongue, breasts hard nipples, belly, thighs legs, bare feet when visible, fingers, wet pussy labia clitoris, ass, visible anus';
+  const REALISM = 'photorealistic, ultra realistic skin texture pores freckles, shot on iPhone 15 Pro Max, candid phone selfie, natural window light, mild film grain, no plastic skin, no AI look, real human woman';
+  const FULL = 'detailed face lips tongue, heavy natural breasts hard nipples, soft belly, full thighs long legs, bare feet when visible, fingers with nails, wet pussy detailed labia clitoris, round ass, visible anus';
 
   function buildPhotoPrompt(g, userPrompt, intensity) {
     const look = randomLook();
-    const base = 'Real smartphone photo of a unique '+g.age+' year old woman, never same face twice, '+look+'. Vibe: '+g.bio+'. '+REALISM+'.';
+    const base = 'Photorealistic smartphone photo of a unique real '+g.age+' year old woman, different face every generation, '+look+'. '+REALISM+'.';
     const up = (userPrompt||'').toLowerCase();
     const force = get('forceNude')==='1';
     let focus = '';
-    if (/pied|pieds|orteils/.test(up)) focus += ', bare feet soles toes';
-    if (/cuisse|jambes?/.test(up)) focus += ', full thighs legs';
-    if (/langue|l[eè]vres|bouche/.test(up)) focus += ', open mouth tongue lips';
-    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', breasts nipples focus';
-    if (/chatte|sexe|vagin|clito/.test(up)) focus += ', close-up wet pussy labia clitoris';
-    if (/cul|fesse|anus|trou/.test(up)) focus += ', ass spread anus hole';
-    if (/doigt|main/.test(up)) focus += ', fingers on body';
-    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', sexy lingerie pulled aside';
+    if (/pied|pieds|orteils/.test(up)) focus += ', bare feet soles toes in focus';
+    if (/cuisse|jambes?/.test(up)) focus += ', full thighs legs in frame';
+    if (/langue|l[eè]vres|bouche/.test(up)) focus += ', open mouth tongue out detailed lips';
+    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', breasts nipples close-up';
+    if (/chatte|sexe|vagin|clito/.test(up)) focus += ', extreme close-up wet pussy spread labia clitoris';
+    if (/cul|fesse|anus|trou/.test(up)) focus += ', ass cheeks spread anus hole clearly visible';
+    if (/doigt|main/.test(up)) focus += ', detailed fingers on body';
+    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', sexy lace lingerie pulled aside';
     if (intensity==='soft' && !force) return base+' Casual clothes, natural face, bedroom. '+(userPrompt||'selfie');
-    if (intensity==='sensuel' && !force) return base+' Sexy lingerie, cleavage, thighs, flirty. '+focus+' '+(userPrompt||'lingerie');
+    if (intensity==='sensuel' && !force) return base+' Sexy lingerie, deep cleavage, thighs, flirty bedroom. '+focus+' '+(userPrompt||'lingerie');
     let acts = '';
-    if (/doigt|masturb|caress|touche|joui/.test(up)) acts = ', legs open, fingers deep in wet pussy, spreading labia, clitoris visible';
-    else if (/suc(e|er)|pipe|bouche|gorges?/.test(up)) acts = ', on knees sucking thick cock, lips stretched, saliva, looking at camera';
-    else if (/prendre|baise|pénétr|queue|bite/.test(up)) acts = ', fucked by thick cock, pussy stretched, doggy or missionary, ahegao';
-    else if (/aval(e|er)|sperme|éjac|facial/.test(up)) acts = ', face covered in cum, tongue out, messy facial';
-    else if (/anus|cul|encul|trou/.test(up)) acts = ', ass spread with hands, anus hole fully visible, looking back';
-    else if (/lingerie/.test(up)) acts = ', lingerie aside, open bra nipples, panties aside pussy anus';
-    else acts = ', completely naked, '+FULL+', legs spread toward camera, wet pussy exposed, anus visible, looking at camera';
-    return base+' Full body hardcore nude'+acts+'.'+focus+' Explicit detail. Unique face. Hardcore porn. '+(userPrompt||'nude');
+    if (/doigt|masturb|caress|touche|joui/.test(up)) acts = ', legs wide open, fingers deep inside wet pussy, spreading labia, clitoris visible, aroused face';
+    else if (/suc(e|er)|pipe|bouche|gorges?/.test(up)) acts = ', on her knees sucking a thick realistic cock, lips stretched, saliva, eye contact with camera';
+    else if (/prendre|baise|pénétr|queue|bite/.test(up)) acts = ', being fucked by thick cock, pussy stretched around shaft, doggy or missionary, ahegao expression';
+    else if (/aval(e|er)|sperme|éjac|facial/.test(up)) acts = ', face and lips covered in cum, tongue out, messy facial, realistic semen';
+    else if (/anus|cul|encul|trou/.test(up)) acts = ', on all fours, ass cheeks spread with both hands, anus and hole fully visible, looking back';
+    else if (/lingerie/.test(up)) acts = ', lingerie pulled aside, open bra hard nipples, panties aside exposing wet pussy and anus';
+    else acts = ', completely naked full body, '+FULL+', legs spread toward camera, wet pussy fully exposed, anus slightly visible, looking at camera';
+    return base+' Explicit hardcore nude photo'+acts+'.'+focus+' Extreme genital detail, realistic wetness, natural body. Hardcore porn photograph. '+(userPrompt||'nude selfie');
   }
 
   window.generatePhoto = async function(prompt='') {
@@ -150,7 +165,7 @@
   window.generateVideo = async function(prompt='') {
     if (!key()) return openAI('⚠️ Connecte l\'IA.');
     const g = currentGirl(); if (!g) return;
-    const p = buildPhotoPrompt(g, prompt, getIntensity())+', short video, natural motion, unique face';
+    const p = buildPhotoPrompt(g, prompt, getIntensity())+', short video, natural body motion, photorealistic';
     addTyping();
     try {
       const url = 'https://gen.pollinations.ai/video/'+encodeURIComponent(p)+'?model=wan&duration=4&aspectRatio=9:16';
@@ -166,6 +181,3 @@
     }
   };
 })();
-
-/* VELVET_GALLERY_UI_LOADER */
-(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();
