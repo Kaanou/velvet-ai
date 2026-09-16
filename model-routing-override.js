@@ -1,4 +1,4 @@
-/* Velvet AI runtime routing override: chat -> Grok, images -> FLUX. */
+/* Velvet AI routing: chat -> mistral-small-4 (fast), images -> flux */
 (() => {
   if (window.__velvetRoutingOverride) return;
   window.__velvetRoutingOverride = true;
@@ -8,15 +8,15 @@
     if (url.includes('/v1/chat/completions') && init.body) {
       try {
         const body = JSON.parse(init.body);
-        body.model = 'x-ai/grok-4.20';
-        init = {...init, body: JSON.stringify(body)};
+        body.model = 'mistralai/mistral-small-4';
+        init = { ...init, body: JSON.stringify(body) };
       } catch (_) {}
     }
     if (url.includes('/v1/images/generations') && init.body) {
       try {
         const body = JSON.parse(init.body);
         body.model = 'flux';
-        init = {...init, body: JSON.stringify(body)};
+        init = { ...init, body: JSON.stringify(body) };
       } catch (_) {}
     }
     return nativeFetch(input, init);
