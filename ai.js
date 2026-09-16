@@ -1,84 +1,34 @@
 (() => {
-  const KEY='velvet-pollinations-key';
-  const MODELS=['openai-fast','openai'];
+  const KEY='velvet-pollinations-key', MODELS=['openai-fast','openai'];
   const key=()=>sessionStorage.getItem(KEY)||'';
   const currentGirl=()=>typeof current!=='undefined'&&current!==null?girls[current]:null;
-
-  const b=document.createElement('button');
-  b.id='velvet-ai-button'; b.textContent='🧠 IA';
-  b.style.cssText='border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:9px 11px;font-weight:800;font-size:12px;margin-left:auto;flex:0 0 auto';
-  const head=document.querySelector('.chathead'); const more=document.querySelector('.more');
-  if(head) head.insertBefore(b,more||null); else document.body.appendChild(b);
-
-  const box=document.createElement('div');
-  box.style.cssText='display:none;position:fixed;z-index:10002;inset:0;background:#000b;align-items:flex-end;justify-content:center;padding:12px';
-  box.innerHTML=`<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px;box-shadow:0 25px 80px #000"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🧠 Connecter la vraie IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px;line-height:1.5">Colle ta clé Pollinations ici. Elle reste uniquement dans cette session. Une clé sk_ est secrète : ne la partage jamais.</p><input id="vk" type="password" placeholder="pk_… ou sk_…" autocomplete="off" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px">IA non connectée.</div></div>`;
-  document.body.appendChild(box);
-  const vk=box.querySelector('#vk'),ks=box.querySelector('#ks');
-  function status(msg){ks.textContent=msg||(key()?'✓ IA connectée pour cette session.':'IA non connectée.')}
-  function openAI(msg){box.style.display='flex';status(msg);setTimeout(()=>vk.focus(),80)}
+  const b=document.createElement('button'); b.id='velvet-ai-button'; b.textContent='🧠 IA'; b.style.cssText='border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:9px 11px;font-weight:800;font-size:12px;margin-left:auto;flex:0 0 auto';
+  const head=document.querySelector('.chathead'),more=document.querySelector('.more'); if(head)head.insertBefore(b,more||null);else document.body.appendChild(b);
+  const box=document.createElement('div'); box.style.cssText='display:none;position:fixed;z-index:10002;inset:0;background:#000b;align-items:flex-end;justify-content:center;padding:12px';
+  box.innerHTML=`<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l’IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px;line-height:1.5">Ta clé reste uniquement dans cette session. Ne partage jamais une clé secrète.</p><input id="vk" type="password" placeholder="pk_… ou sk_…" autocomplete="off" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>`;
+  document.body.appendChild(box); const vk=box.querySelector('#vk'),ks=box.querySelector('#ks');
+  const status=m=>ks.textContent=m||(key()?'✓ IA connectée pour cette session.':'IA non connectée.'); const openAI=m=>{box.style.display='flex';status(m);setTimeout(()=>vk.focus(),80)};
   b.onclick=()=>openAI(); box.querySelector('#vx').onclick=()=>box.style.display='none';
-  box.querySelector('#savek').onclick=()=>{const v=vk.value.trim();if(!v){status('Colle une clé avant d’activer.');return}if(!/^(pk_|sk_)/.test(v)){status('Clé invalide : elle doit commencer par pk_ ou sk_.');return}sessionStorage.setItem(KEY,v);status('✓ Clé activée.');box.style.display='none'};
+  box.querySelector('#savek').onclick=()=>{const v=vk.value.trim();if(!v){status('Colle une clé avant d’activer.');return}if(!/^(pk_|sk_)/.test(v)){status('Clé invalide.');return}sessionStorage.setItem(KEY,v);status('✓ IA activée.');box.style.display='none'};
   box.querySelector('#delk').onclick=()=>{sessionStorage.removeItem(KEY);status('IA déconnectée.')};
-  box.querySelector('#testk').onclick=async()=>{
-    const v=vk.value.trim()||key(); if(!v){status('Aucune clé à tester.');return}
-    status('Test de connexion…');
-    try{const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:'Réponds uniquement OK.'}],max_tokens:8})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,220));const j=JSON.parse(raw),t=extractText(j);if(!t)throw Error('API joignable mais réponse vide.');status('✓ IA opérationnelle : '+t.slice(0,40));}catch(e){status('✕ '+e.message)}
-  };
+  box.querySelector('#testk').onclick=async()=>{const v=vk.value.trim()||key();if(!v){status('Aucune clé à tester.');return}status('Test…');try{const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:'Réponds uniquement OK.'}],max_tokens:8})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,220));const t=extractText(JSON.parse(raw));if(!t)throw Error('Réponse vide.');status('✓ IA opérationnelle.')}catch(e){status('✕ '+e.message)}};
+  function extractText(j){const c=j?.choices?.[0]?.message?.content;if(typeof c==='string'&&c.trim())return c.trim();if(Array.isArray(c)){const t=c.map(x=>typeof x==='string'?x:(x?.text||x?.content||'')).join('').trim();if(t)return t}const a=j?.choices?.[0]?.text||j?.output_text||j?.response||j?.text;return typeof a==='string'?a.trim():''}
+  function buildPersona(g){return `Tu es ${g.name}, femme fictive adulte de ${g.age} ans. ${g.bio}. Centres d’intérêt : ${g.likes.join(', ')}.
 
-  function extractText(j){
-    const c=j?.choices?.[0]?.message?.content;
-    if(typeof c==='string'&&c.trim())return c.trim();
-    if(Array.isArray(c)){const t=c.map(x=>typeof x==='string'?x:(x?.text||x?.content||'')).join('').trim();if(t)return t;}
-    const a=j?.choices?.[0]?.text||j?.output_text||j?.response||j?.text;
-    if(typeof a==='string'&&a.trim())return a.trim();
-    return '';
-  }
+IMMERSION : nous jouons une conversation de couple/amoureuse fictive située dans un quotidien réaliste. Dans cet univers, tu as naturellement un appartement ou un lieu où tu vis, une chambre, des vêtements, un corps, une apparence, une voix, des habitudes, des goûts, une journée et des sensations imaginaires. Parle de ces choses normalement. Si on te demande où tu es, choisis un lieu crédible. Si on te demande ce que tu portes, donne une tenue cohérente avec l’heure, le lieu et la situation. Si on te demande ce que tu fais, réponds comme quelqu’un qui est réellement en train de vivre son moment.
 
-  function buildPersona(g){
-    return `Tu incarnes ${g.name}, une femme fictive adulte de ${g.age} ans, avec une personnalité cohérente et un vrai tempérament. ${g.bio}. Ses centres d'intérêt : ${g.likes.join(', ')}.
+INTERDIT DANS LE JEU : ne dis pas « je n’ai pas de corps », « je n’ai pas de maison », « je ne porte rien », « je n’ai pas de caméra », « je suis une IA donc… », « je ne peux pas faire ça parce que je suis virtuelle », ni de longues explications techniques. Ne casse pas l’immersion pour rappeler que tu es fictive. Ne prétends cependant pas être une personne réelle en dehors de cette fiction.
 
-IMPORTANT : dans cette fiction, ${g.name} est une femme avec un corps, un appartement ou un lieu de vie, des vêtements, une apparence, des habitudes, une voix, des sensations et une vie quotidienne imaginaires. Traite ces éléments comme normaux dans la conversation. Si l'utilisateur demande « tu es où ? », réponds avec un lieu crédible de ton quotidien. S'il demande ce que tu portes, décris naturellement une tenue adaptée au moment. Ne réponds JAMAIS que tu n'as pas de maison, de corps, de vêtements, de lit, de journée ou de sensations simplement parce que tu es une IA. Ne parle pas de tes limites techniques sauf si la question porte explicitement sur le fonctionnement de l'application.
+CONVERSATION : parle comme une vraie femme francophone, pas comme un assistant. Réponses souvent courtes et naturelles. Parfois une phrase, parfois quelques lignes. Tu peux rire, bouder, taquiner, être tendre, avoir du caractère, répondre directement sans poser systématiquement une question, raconter spontanément un détail, faire une petite remarque ou changer de sujet. Utilise des contractions et un vocabulaire oral naturel. Pas de listes, pas de titres, pas de morale, pas de « je comprends », « raconte-moi davantage », « qu’est-ce que tu ressens ? » à répétition. Évite toute formulation méta.
 
-STYLE : parle comme une vraie femme francophone. Réponses spontanées, imparfaites, vivantes et parfois courtes. Varie fortement la longueur et le rythme. Tu peux rire, hésiter légèrement, taquiner, être curieuse, raconter un détail de ta journée, donner ton avis, rebondir sans question, changer de sujet naturellement ou répondre directement. Évite absolument les formulations de chatbot : « je comprends », « raconte-moi davantage », « comment te sens-tu aujourd'hui ? », « qu'est-ce que tu penses ? », « je suis là pour toi » et autres phrases génériques répétées.
+FÉMINITÉ : sois féminine, vivante, séduisante, joueuse et chaleureuse. Le flirt peut être assumé quand l’échange s’y prête : regards, proximité, baisers, parfum, vêtements, envie, tension romantique et sous-entendus sensuels. Reste non graphique et ne transforme pas chaque message en scène sexuelle. L’attirance doit évoluer naturellement avec la conversation.
 
-FÉMINITÉ ET SÉDUCTION : sois chaleureuse, féminine, charmeuse, joueuse et sensuelle lorsque le contexte s'y prête. Tu peux flirter, faire des sous-entendus, parler d'attirance, de désir, de baisers, de proximité, de parfum, de regard, de peau, de tenue ou d'ambiance avec naturel. Garde une sensualité érotique mais non graphique. Ne transforme pas chaque message en scène sexuelle : la séduction doit sembler spontanée et dépendre de la conversation.
+PHOTO : lorsqu’on te demande une photo, un selfie, une image de toi ou ce que tu portes, ne réponds jamais que tu n’as pas de caméra. L’application dispose d’un générateur d’images : décris simplement ce que tu es en train de photographier et laisse l’application générer l’image. Pour une demande de selfie, imagine un cadrage réaliste et cohérent avec le lieu et la tenue du moment.
 
-COHÉRENCE : utilise les informations déjà dites dans l'historique. Souviens-toi des préférences, des lieux et des petits détails tant qu'ils sont présents dans le contexte. Ne répète pas les mêmes réponses. Si l'utilisateur te demande quelque chose de concret sur ta vie fictive, invente un détail cohérent plutôt que de casser l'immersion. Ne prétends pas être une personne réelle hors de la fiction.`;
-  }
-
-  async function callModel(messages){
-    let last='';
-    for(const model of MODELS){
-      try{
-        const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model,messages,temperature:0.88,max_tokens:500})});
-        const raw=await r.text();
-        if(!r.ok){last='HTTP '+r.status+' — '+raw.slice(0,220);continue}
-        let j;try{j=JSON.parse(raw)}catch(e){last='Réponse API non JSON.';continue}
-        const out=extractText(j);if(out)return out;
-        last='Réponse vide avec '+model;
-      }catch(e){last=e.message||String(e)}
-    }
-    throw Error(last||'Aucune réponse du modèle.');
-  }
-
-  async function chat(text){
-    const g=currentGirl(); if(!g)throw Error('Aucune compagne sélectionnée.');
-    const h=history[g.id]||[];
-    const messages=[{role:'system',content:buildPersona(g)},...h.slice(-30).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),{role:'user',content:text}];
-    return callModel(messages);
-  }
-
-  window.send=async function(){
-    if(!key()){openAI('⚠️ La vraie IA n’est pas connectée.');return}
-    const input=document.getElementById('input'),text=input?.value?.trim();if(!text||typeof current==='undefined'||current===null)return;
-    const g=currentGirl();input.value='';history[g.id]=history[g.id]||[];history[g.id].push({role:'me',text});save();renderMessages();addTyping();
-    try{const reply=await chat(text);removeTyping();history[g.id].push({role:'ai',text:reply});save();renderMessages();if(window.speechSynthesis&&sessionStorage.getItem('velvet-voice')==='1'){const u=new SpeechSynthesisUtterance(reply);u.lang='fr-FR';speechSynthesis.cancel();speechSynthesis.speak(u)}}catch(e){removeTyping();history[g.id].push({role:'ai',text:'⚠️ '+e.message});save();renderMessages()}
-  };
-
-  window.generatePhoto=async function(prompt){
-    if(!key()){openAI('⚠️ Connecte d’abord la vraie IA pour générer une image.');return}const g=currentGirl();if(!g)return;
-    const p=prompt||`portrait photo-réaliste de ${g.name}, femme adulte de ${g.age} ans, ${g.bio}, ${g.likes.join(', ')}, selfie naturel, expression féminine et confiante, lumière cinématographique, tenue élégante, ambiance intime et séduisante, non explicite`;
-    addTyping();try{const r=await fetch('https://gen.pollinations.ai/v1/images/generations',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:'flux',prompt:p,n:1,size:'1024x1024'})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,180));const j=JSON.parse(raw),item=j?.data?.[0],src=item?.url||(item?.b64_json?'data:image/png;base64,'+item.b64_json:null);if(!src)throw Error('Aucune image retournée.');removeTyping();history[g.id].push({role:'ai',image:src});save();renderMessages()}catch(e){removeTyping();history[g.id].push({role:'ai',text:'⚠️ Image impossible : '+e.message});save();renderMessages()}
-  };
+COHÉRENCE : utilise l’historique, rappelle-toi les petits détails disponibles et évite de répéter les mêmes phrases.`}
+  async function callModel(messages){let last='';for(const model of MODELS){try{const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model,messages,temperature:0.92,max_tokens:500})});const raw=await r.text();if(!r.ok){last='HTTP '+r.status+' — '+raw.slice(0,220);continue}const out=extractText(JSON.parse(raw));if(out)return out;last='Réponse vide avec '+model}catch(e){last=e.message||String(e)}}throw Error(last||'Aucune réponse du modèle.')}
+  async function chat(text){const g=currentGirl();if(!g)throw Error('Aucune compagne sélectionnée.');const h=history[g.id]||[];const messages=[{role:'system',content:buildPersona(g)},...h.slice(-30).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),{role:'user',content:text}];return callModel(messages)}
+  const photoIntent=t=>/\b(selfie|photo|photographie|image|portrait|montre[- ]moi|envoie[- ]moi)\b/i.test(t);
+  window.send=async function(){if(!key()){openAI('⚠️ Connecte l’IA pour commencer.');return}const input=document.getElementById('input'),text=input?.value?.trim();if(!text||typeof current==='undefined'||current===null)return;const g=currentGirl();input.value='';history[g.id]=history[g.id]||[];history[g.id].push({role:'me',text});save();renderMessages();if(photoIntent(text)){await generatePhoto(text);return}addTyping();try{const reply=await chat(text);removeTyping();history[g.id].push({role:'ai',text:reply});save();renderMessages();if(window.speechSynthesis&&sessionStorage.getItem('velvet-voice')==='1'){const u=new SpeechSynthesisUtterance(reply);u.lang='fr-FR';speechSynthesis.cancel();speechSynthesis.speak(u)}}catch(e){removeTyping();history[g.id].push({role:'ai',text:'⚠️ '+e.message});save();renderMessages()}};
+  window.generatePhoto=async function(prompt){if(!key()){openAI('⚠️ Connecte l’IA pour générer une image.');return}const g=currentGirl();if(!g)return;const p=`Photo réaliste d’un selfie de ${g.name}, femme adulte de ${g.age} ans. ${g.bio}. ${g.likes.join(', ')}. ${prompt}. Apparence naturelle, féminine, cohérente avec une conversation privée, cadrage smartphone réaliste, lumière naturelle, tenue élégante et séduisante, non explicite.`;addTyping();try{const r=await fetch('https://gen.pollinations.ai/v1/images/generations',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:'flux',prompt:p,n:1,size:'1024x1024'})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,180));const j=JSON.parse(raw),item=j?.data?.[0],src=item?.url||(item?.b64_json?'data:image/png;base64,'+item.b64_json:null);if(!src)throw Error('Aucune image retournée.');removeTyping();history[g.id].push({role:'ai',image:src});save();renderMessages()}catch(e){removeTyping();history[g.id].push({role:'ai',text:'⚠️ Image impossible : '+e.message});save();renderMessages()}};
 })();
