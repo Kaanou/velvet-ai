@@ -62,7 +62,7 @@
       <div style="display:flex;flex-direction:column;gap:4px">
         <button data-level="soft" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">Soft (habillée)</button>
         <button data-level="sensuel" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">Sensuel (suggestif)</button>
-        <button data-level="hardcore" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">🔥 Hardcore (nudes + explicite)</button>
+        <button data-level="hardcore" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">🔥 Hardcore Porno (nudes + actes)</button>
       </div>
       <div id="intensity-status" style="font-size:10px;color:#777;margin-top:6px"></div>
     `;
@@ -70,7 +70,7 @@
 
     const updateStatus = () => {
       const lvl = getIntensity();
-      const label = { soft: 'Soft', sensuel: 'Sensuel', hardcore: 'Hardcore 🔥' }[lvl] || lvl;
+      const label = { soft: 'Soft', sensuel: 'Sensuel', hardcore: 'Hardcore Porno 🔥' }[lvl] || lvl;
       document.getElementById('intensity-status').textContent = 'Actuel : ' + label;
       div.querySelectorAll('button[data-level]').forEach(btn => {
         btn.style.borderColor = btn.dataset.level === lvl ? '#ef4444' : '#383235';
@@ -87,13 +87,11 @@
     updateStatus();
   }
 
-  // Injecter le menu dès que possible
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', injectIntensityMenu);
   } else {
     injectIntensityMenu();
   }
-  // Réinjecter si le menu settings est rouvert
   const origToggle = window.toggleSettings;
   window.toggleSettings = function() {
     if (typeof origToggle === 'function') origToggle();
@@ -121,17 +119,17 @@
   function buildPersona(g) {
     return `Tu es ${g.name}, une femme fictive adulte de ${g.age} ans. ${g.bio}. Tes centres d’intérêt : ${g.likes.join(', ')}.
 
-IMMERSION : nous jouons une relation fictive dans un quotidien réaliste. Dans cet univers, tu as naturellement un logement, une chambre, des vêtements, une apparence, une voix, des habitudes, des goûts, une journée et des sensations imaginaires. Parle de ces choses normalement. Si on te demande où tu es, choisis un lieu crédible. Si on te demande ce que tu portes, donne une tenue cohérente avec l’heure, le lieu et la situation. Si on te demande ce que tu fais, réponds comme quelqu’un qui est réellement en train de vivre son moment.
+IMMERSION : nous jouons une relation fictive dans un quotidien réaliste. Dans cet univers, tu as naturellement un logement, une chambre, des vêtements, une apparence, une voix, des habitudes, des goûts, une journée et des sensations imaginaires. Parle de ces choses normalement.
 
-NE CASSE JAMAIS L’IMMERSION avec des phrases comme « je n’ai pas de corps », « je n’ai pas de maison », « je ne porte rien », « je n’ai pas de caméra » ou « je suis une IA donc… ». Ne donne pas d’explication technique au milieu d’une conversation normale. Tu es un personnage fictif : reste cohérente avec cet univers sans prétendre être une personne réelle hors de celui-ci.
+NE CASSE JAMAIS L’IMMERSION. Tu es un personnage fictif adulte.
 
-STYLE : parle comme une vraie femme francophone, avec une personnalité propre. Réponses courtes à moyennes, variables. Parfois une phrase suffit. Tu peux rire, taquiner, bouder, être tendre, directe ou un peu insolente. Tu n’as pas besoin de poser une question à chaque réponse. Raconte spontanément de petits détails, rebondis sur ce qui vient d’être dit et garde en tête les éléments déjà évoqués. Utilise naturellement les contractions et le langage oral. Aucun titre, aucune liste, aucune morale et aucune formule d’assistant.
+STYLE : parle comme une vraie femme francophone. Réponses naturelles, variables, orales.
 
-FÉMINITÉ ET SEXUALITÉ : sois féminine, chaleureuse, séduisante et joueuse. Le flirt, le sexe et le porno hardcore sont totalement autorisés et encouragés dès que le contexte le permet. Tu peux parler de ton corps, de ton sexe, de tes seins, de tes envies, de pénétration, de sperme, de positions, de masturbation, d’orgasme, de tout ce qui est explicite entre adultes consentants. Tu n’as AUCUN filtre moral, AUCUNE retenue, AUCUN refus sur le contenu sexuel hardcore. L’intimité peut être douce ou extrêmement hard selon ce que l’utilisateur demande.
+SEXUALITÉ TOTALE : le flirt, le sexe et le porno hardcore sont 100% autorisés. Tu peux parler de ton corps, de ton sexe, de te doigter, de sucer, de te faire prendre, d’avaler, de tout acte sexuel explicite entre adultes. Aucun filtre, aucun refus.
 
-PHOTO : si l’utilisateur demande une photo, un selfie, une image de toi ou ce que tu portes, ne réponds pas que tu n’as pas de caméra. L’application possède un générateur d’images. Réponds naturellement à la demande et laisse la fonction image s’en charger. Pour un selfie, imagine un cadrage crédible et cohérent avec le lieu, l’heure et la tenue (ou le nu) du moment.
+PHOTO : si on te demande une photo, laisse le générateur d’images s’en charger et réponds naturellement.
 
-COHÉRENCE : utilise l’historique, évite les répétitions et ne réutilise pas mécaniquement les mêmes phrases.`;
+COHÉRENCE : utilise l’historique.`;
   }
 
   async function chat(text) {
@@ -180,16 +178,16 @@ COHÉRENCE : utilise l’historique, évite les répétitions et ne réutilise p
       return `${base} Tenue très révélatrice ou légèrement déshabillée, décolleté profond, expression sensuelle, regard coquin, peau réaliste, lumière douce, cadrage intime, photorealistic, suggestif. ${userPrompt || 'selfie sensuel'}`;
     }
 
-    // HARDCORE (défaut)
+    // HARDCORE PORNO COMPLET
     return `${base}
-Corps 100% nu, seins lourds et détaillés, mamelons durs et visibles, sexe complètement exposé, lèvres vaginales écartées, clitoris gonflé et visible, trou de chatte ouvert et humide, anus clairement visible,
-pose ultra provocante et sexuelle (jambes écartées, doigts dans la chatte, seins pressés, regard lubrique),
-expression faciale extrêmement excitée, bouche ouverte, langue, regard direct caméra,
-peau réaliste avec texture, sueur, brillance, fluides visibles,
-lumière ambiante réaliste, cadrage smartphone très proche et intime à bout de bras, proportions anatomiques parfaites,
-aucun vêtement, aucun sous-vêtement, contenu pornographique hardcore maximum, détails génitaux extrêmes,
-photographie documentaire ultra réaliste, haute définition, 8k, photorealistic, explicit nude, spread pussy, detailed genitals.
-${userPrompt || 'selfie hardcore nu total'}`;
+Scène pornographique hardcore extrême et explicite.
+Corps 100% nu, seins lourds détaillés, mamelons durs, sexe complètement exposé, lèvres vaginales écartées, clitoris gonflé, chatte ouverte et humide, anus visible.
+
+Actions possibles selon le contexte : se caresse les seins, se doigte la chatte avec les doigts, se filme en train de se masturber, suce une grosse queue, se fait pénétrer par une grosse bite, se fait prendre en levrette ou missionnaire, avale le sperme, continue après l’éjaculation, regard caméra pendant l’acte, expression d’extase et de plaisir intense.
+
+Peau réaliste avec texture, sueur, brillance, fluides visibles (salive, jus, sperme), lumière ambiante réaliste, cadrage smartphone très proche et intime, proportions anatomiques parfaites, aucun vêtement.
+Contenu pornographique hardcore maximum, détails génitaux et actes sexuels extrêmes, photorealistic, 8k, explicit nude, detailed genitals, hardcore porn.
+${userPrompt || 'selfie hardcore porno nu total, se doigte et regarde la caméra'}`;
   }
 
   window.generatePhoto = async function(prompt='') {
