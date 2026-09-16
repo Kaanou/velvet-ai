@@ -21,6 +21,45 @@ jobs:
         uses: actions/checkout@v4
       - name: Configurer Pages
         uses: actions/configure-pages@v5
+      - name: Optimiser l'expérience mobile
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'VELVET_UPGRADE_V3' not in s:
+              addon='''
+<!-- VELVET_UPGRADE_V3 -->
+<style>
+.voiceBtn{width:50px;height:50px;flex:0 0 50px;border:1px solid #302b2d;border-radius:16px;background:#121112;color:#ddd;font-size:18px}.voiceBtn.live{background:#ef4444;border-color:#ef4444;color:#fff}.voiceHint{position:fixed;z-index:70;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#181617;color:#eee;border:1px solid #302b2d;border-radius:99px;padding:9px 13px;font-size:11px;display:none;box-shadow:0 10px 40px #000}.composer{gap:6px}
+@media(max-width:560px){.voiceBtn{width:46px;height:50px;flex-basis:46px}.send{min-width:70px}}
+</style>
+<div class="voiceHint" id="voiceHint">Je t’écoute…</div>
+<script>
+(function(){
+ const input=document.getElementById('input'),send=document.getElementById('sendBtn'),composer=send&&send.parentElement;
+ if(!input||!send||!composer)return;
+ if(!document.getElementById('voiceBtn')){
+  const b=document.createElement('button');b.id='voiceBtn';b.className='voiceBtn';b.type='button';b.textContent='🎙️';b.title='Parler';composer.insertBefore(b,send);
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){const r=new SR();r.lang='fr-FR';r.interimResults=true;r.continuous=false;r.onstart=()=>{b.classList.add('live');document.getElementById('voiceHint').style.display='block'};r.onend=()=>{b.classList.remove('live');document.getElementById('voiceHint').style.display='none'};r.onresult=e=>{let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;if(t)input.value=t;if(e.results[e.results.length-1].isFinal)setTimeout(()=>{if(input.value.trim())send.click()},150)};b.onclick=()=>{try{r.start()}catch(e){}}}else{b.disabled=true;b.style.opacity='.35'}
+ }
+ const sync=()=>{if(!window.visualViewport)return;const vv=visualViewport;const kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);document.documentElement.style.setProperty('--kb',Math.min(kb,380)+'px');const m=document.getElementById('messages');if(m)setTimeout(()=>m.scrollTop=m.scrollHeight,20)};
+ if(window.visualViewport){visualViewport.addEventListener('resize',sync);visualViewport.addEventListener('scroll',sync)}window.addEventListener('orientationchange',()=>setTimeout(sync,300));sync();
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click()}});
+ const ip=document.getElementById('imagePrompt');if(ip)ip.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const b=document.getElementById('genBtn');if(b)b.click()}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){['menu','modal','profile'].forEach(id=>{const x=document.getElementById(id);if(x)x.style.display='none'})}});
+})();
+</script>
+'''
+              s=s.replace('</body>',addon+'</body>')
+              p.write_text(s,encoding='utf-8')
+          Path('manifest.webmanifest').write_text('{"name":"Velvet AI","short_name":"Velvet AI","start_url":"./","display":"standalone","background_color":"#080808","theme_color":"#080808","lang":"fr","icons":[]}',encoding='utf-8')
+          s=p.read_text(encoding='utf-8')
+          if '<link rel="manifest"' not in s:
+              p.write_text(s.replace('</head>','<link rel="manifest" href="manifest.webmanifest"></head>'),encoding='utf-8')
+          PY
       - name: Préparer le site
         uses: actions/upload-pages-artifact@v3
         with:
