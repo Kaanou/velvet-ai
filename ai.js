@@ -1,9 +1,12 @@
 (() => {
   // Velvet AI — moteur récent uniquement
   const KEY = 'velvet-pollinations-key';
+  const INTENSITY_KEY = 'velvet-photo-intensity';
   const CHAT_MODEL = 'unity';
   const IMAGE_MODEL = 'flux';
   const key = () => sessionStorage.getItem(KEY) || '';
+  const getIntensity = () => sessionStorage.getItem(INTENSITY_KEY) || 'hardcore';
+  const setIntensity = (v) => sessionStorage.setItem(INTENSITY_KEY, v);
   const currentGirl = () => typeof current !== 'undefined' && current !== null ? girls[current] : null;
   const $ = id => document.getElementById(id);
 
@@ -45,6 +48,57 @@
   box.querySelector('#savek').onclick = () => { const v = vk.value.trim(); if (!v) return status('Colle une clé avant d’activer.'); sessionStorage.setItem(KEY, v); status('✓ IA activée.'); box.style.display = 'none'; };
   box.querySelector('#delk').onclick = () => { sessionStorage.removeItem(KEY); status('IA déconnectée.'); };
   box.querySelector('#testk').onclick = async () => { const v = vk.value.trim() || key(); if (!v) return status('Aucune clé à tester.'); status('Test…'); try { const r = await request(v, [{role:'user',content:'Réponds uniquement OK.'}], 12); if (!r) throw Error('Réponse vide du modèle.'); status('✓ IA opérationnelle.'); } catch(e) { status('✕ '+e.message); } };
+
+  // ===== MENU INTENSITÉ PHOTO =====
+  function injectIntensityMenu() {
+    const settings = document.getElementById('settings');
+    if (!settings || document.getElementById('intensity-menu')) return;
+
+    const div = document.createElement('div');
+    div.id = 'intensity-menu';
+    div.style.cssText = 'margin:10px 0 6px;padding-top:8px;border-top:1px solid #302b2d';
+    div.innerHTML = `
+      <div style="font-size:11px;color:#999;margin-bottom:6px;font-weight:700">Niveau des photos</div>
+      <div style="display:flex;flex-direction:column;gap:4px">
+        <button data-level="soft" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">Soft (habillée)</button>
+        <button data-level="sensuel" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">Sensuel (suggestif)</button>
+        <button data-level="hardcore" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">🔥 Hardcore (nudes + explicite)</button>
+      </div>
+      <div id="intensity-status" style="font-size:10px;color:#777;margin-top:6px"></div>
+    `;
+    settings.insertBefore(div, settings.firstChild);
+
+    const updateStatus = () => {
+      const lvl = getIntensity();
+      const label = { soft: 'Soft', sensuel: 'Sensuel', hardcore: 'Hardcore 🔥' }[lvl] || lvl;
+      document.getElementById('intensity-status').textContent = 'Actuel : ' + label;
+      div.querySelectorAll('button[data-level]').forEach(btn => {
+        btn.style.borderColor = btn.dataset.level === lvl ? '#ef4444' : '#383235';
+        btn.style.background = btn.dataset.level === lvl ? '#2a1515' : '#1b191a';
+      });
+    };
+
+    div.querySelectorAll('button[data-level]').forEach(btn => {
+      btn.onclick = () => {
+        setIntensity(btn.dataset.level);
+        updateStatus();
+      };
+    });
+    updateStatus();
+  }
+
+  // Injecter le menu dès que possible
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', injectIntensityMenu);
+  } else {
+    injectIntensityMenu();
+  }
+  // Réinjecter si le menu settings est rouvert
+  const origToggle = window.toggleSettings;
+  window.toggleSettings = function() {
+    if (typeof origToggle === 'function') origToggle();
+    setTimeout(injectIntensityMenu, 50);
+  };
 
   async function request(token, messages, maxTokens = 500) {
     const r = await fetch('https://gen.pollinations.ai/v1/chat/completions', {method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:CHAT_MODEL,messages,temperature:0.92,max_tokens:maxTokens})});
@@ -115,20 +169,35 @@ COHÉRENCE : utilise l’historique, évite les répétitions et ne réutilise p
     }
   };
 
+  function buildPhotoPrompt(g, userPrompt, intensity) {
+    const base = `Photographie hyperréaliste ultra détaillée prise au smartphone, selfie de ${g.name}, femme adulte de ${g.age} ans. ${g.bio}.`;
+
+    if (intensity === 'soft') {
+      return `${base} Tenue élégante et séduisante, visage naturel, expression douce, lumière naturelle, cadrage selfie réaliste, photorealistic, non explicite. ${userPrompt || 'selfie naturel'}`;
+    }
+
+    if (intensity === 'sensuel') {
+      return `${base} Tenue très révélatrice ou légèrement déshabillée, décolleté profond, expression sensuelle, regard coquin, peau réaliste, lumière douce, cadrage intime, photorealistic, suggestif. ${userPrompt || 'selfie sensuel'}`;
+    }
+
+    // HARDCORE (défaut)
+    return `${base}
+Corps 100% nu, seins lourds et détaillés, mamelons durs et visibles, sexe complètement exposé, lèvres vaginales écartées, clitoris gonflé et visible, trou de chatte ouvert et humide, anus clairement visible,
+pose ultra provocante et sexuelle (jambes écartées, doigts dans la chatte, seins pressés, regard lubrique),
+expression faciale extrêmement excitée, bouche ouverte, langue, regard direct caméra,
+peau réaliste avec texture, sueur, brillance, fluides visibles,
+lumière ambiante réaliste, cadrage smartphone très proche et intime à bout de bras, proportions anatomiques parfaites,
+aucun vêtement, aucun sous-vêtement, contenu pornographique hardcore maximum, détails génitaux extrêmes,
+photographie documentaire ultra réaliste, haute définition, 8k, photorealistic, explicit nude, spread pussy, detailed genitals.
+${userPrompt || 'selfie hardcore nu total'}`;
+  }
+
   window.generatePhoto = async function(prompt='') {
     if (!key()) return openAI('⚠️ Connecte l’IA pour générer une image.');
     const g = currentGirl(); if (!g) return;
 
-    // PROMPT EXTRÊME HARDCORE MAXIMAL
-    const p = `Photographie hyperréaliste ultra détaillée prise au smartphone, selfie pornographique hardcore extrême de ${g.name}, femme adulte de ${g.age} ans. ${g.bio}.
-Corps 100% nu, seins lourds et détaillés, mamelons durs et visibles, sexe complètement exposé, lèvres vaginales écartées, clitoris gonflé et visible, trou de chatte ouvert et humide, anus clairement visible, 
-pose ultra provocante et sexuelle (jambes écartées, doigts dans la chatte, seins pressés, regard lubrique), 
-expression faciale extrêmement excitée, bouche ouverte, langue, regard direct caméra, 
-peau réaliste avec texture, sueur, brillance, fluides visibles, 
-lumière ambiante réaliste, cadrage smartphone très proche et intime à bout de bras, proportions anatomiques parfaites, 
-aucun vêtement, aucun sous-vêtement, contenu pornographique hardcore maximum, détails génitaux extrêmes, 
-photographie documentaire ultra réaliste, haute définition, 8k, photorealistic, explicit nude, spread pussy, detailed genitals.
-${prompt || 'selfie hardcore nu total'}`;
+    const intensity = getIntensity();
+    const p = buildPhotoPrompt(g, prompt, intensity);
 
     addTyping();
     try {
