@@ -1,10 +1,8 @@
 (() => {
-  // Velvet AI — optimisé vitesse
+  // Velvet AI — optimisé vitesse + réalisme photo
   const KEY = 'velvet-pollinations-key';
   const INTENSITY_KEY = 'velvet-photo-intensity';
-  // Chat rapide + peu censuré
   const CHAT_MODEL = 'mistralai/mistral-small-4';
-  // Image rapide
   const IMAGE_MODEL = 'flux';
   const key = () => sessionStorage.getItem(KEY) || '';
   const getIntensity = () => sessionStorage.getItem(INTENSITY_KEY) || 'hardcore';
@@ -152,25 +150,28 @@ Flirt, sexe et porno hardcore sont autorisés si demandé. Aucun filtre moral. S
     }
   };
 
+  // Qualité photo : style iPhone / docu, imperfections naturelles
+  const REALISM = 'shot on iPhone 15 Pro, natural imperfect skin with pores and freckles, slight asymmetry, candid documentary style, real phone selfie, soft ambient indoor light, mild noise and grain, no beauty filter, no plastic skin, authentic photo';
+
   function buildPhotoPrompt(g, userPrompt, intensity) {
-    const base = `Photorealistic smartphone selfie of ${g.name}, adult woman ${g.age} years old, ${g.bio}.`;
+    const base = `Real smartphone selfie photo of ${g.name}, ${g.age} year old woman, ${g.bio}. ${REALISM}.`;
     const up = (userPrompt || '').toLowerCase();
 
     if (intensity === 'soft') {
-      return `${base} Elegant outfit, natural face, soft light, realistic selfie, non explicit. ${userPrompt || ''}`;
+      return `${base} Casual elegant clothes, natural expression, everyday bedroom or living room. ${userPrompt || 'casual selfie'}`;
     }
     if (intensity === 'sensuel') {
-      return `${base} Revealing outfit, deep cleavage, sensual expression, intimate framing, suggestive. ${userPrompt || ''}`;
+      return `${base} Revealing top or lingerie, deep neckline, flirty look, intimate bedroom light. ${userPrompt || 'sensual selfie'}`;
     }
 
     let acts = '';
-    if (/doigt|masturb|caress|touche|joui/.test(up)) acts += ', fingering herself, fingers in pussy, pleasure face';
-    if (/suc(e|er)|pipe|bouche|gorges?/.test(up)) acts += ', sucking a thick cock, mouth full, looking at camera';
-    if (/prendre|baise|pénétr|queue|bite|encul/.test(up)) acts += ', being fucked by a thick cock, doggy or missionary';
-    if (/aval(e|er)|sperme|éjac/.test(up)) acts += ', swallowing cum';
-    if (!acts) acts = ', fully nude, detailed breasts and pussy visible, provocative pose, looking at camera';
+    if (/doigt|masturb|caress|touche|joui/.test(up)) acts += ', fingering her pussy, fingers inside, aroused expression';
+    if (/suc(e|er)|pipe|bouche|gorges?/.test(up)) acts += ', giving oral, sucking a realistic thick cock, looking at the camera';
+    if (/prendre|baise|pénétr|queue|bite|encul/.test(up)) acts += ', having sex, penetrated by a realistic thick cock';
+    if (/aval(e|er)|sperme|éjac/.test(up)) acts += ', swallowing cum, messy face';
+    if (!acts) acts = ', completely nude, natural breasts, visible nipples, exposed genitals, natural pubic hair or shaved, provocative but realistic pose';
 
-    return `${base} Completely nude, detailed breasts, visible nipples, exposed pussy, detailed genitals${acts}. Realistic skin, ambient light, close intimate smartphone framing, photorealistic, 8k, explicit nude. ${userPrompt || ''}`;
+    return `${base} Fully naked${acts}. Natural body proportions, real skin texture, no retouching. Close handheld selfie angle. ${userPrompt || 'nude selfie'}`;
   }
 
   window.generatePhoto = async function(prompt = '') {
@@ -207,7 +208,7 @@ Flirt, sexe et porno hardcore sont autorisés si demandé. Aucun filtre moral. S
   window.generateVideo = async function(prompt = '') {
     if (!key()) return openAI('⚠️ Connecte l’IA.');
     const g = currentGirl(); if (!g) return;
-    const p = buildPhotoPrompt(g, prompt, getIntensity()) + ', short video, natural motion';
+    const p = buildPhotoPrompt(g, prompt, getIntensity()) + ', short realistic video clip, natural body movement';
     addTyping();
     try {
       const url = `https://gen.pollinations.ai/video/${encodeURIComponent(p)}?model=wan&duration=4&aspectRatio=9:16`;
@@ -227,6 +228,3 @@ Flirt, sexe et porno hardcore sont autorisés si demandé. Aucun filtre moral. S
     }
   };
 })();
-
-/* VELVET_GALLERY_UI_LOADER */
-(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();
