@@ -21,20 +21,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Configurer Pages
         uses: actions/configure-pages@v5
-      - name: Optimiser l'expérience mobile
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('index.html'); s=p.read_text(encoding='utf-8')
-          if 'VELVET_UPGRADE_V4' not in s:
-              addon='<style>.voiceBtn{width:50px;height:50px;flex:0 0 50px;border:1px solid #302b2d;border-radius:16px;background:#121112;color:#ddd;font-size:18px}.voiceBtn.live{background:#ef4444;border-color:#ef4444;color:#fff}.voiceHint{position:fixed;z-index:70;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#181617;color:#eee;border:1px solid #302b2d;border-radius:99px;padding:9px 13px;font-size:11px;display:none}.composer{gap:6px}@media(max-width:560px){.voiceBtn{width:46px;height:50px;flex-basis:46px}.send{min-width:70px}}</style><div class="voiceHint" id="voiceHint">Je t’écoute…</div><script>/* VELVET_UPGRADE_V4 */(function(){const i=document.getElementById("input"),s=document.getElementById("sendBtn"),c=s&&s.parentElement;if(!i||!s||!c)return;if(!document.getElementById("voiceBtn")){const b=document.createElement("button");b.id="voiceBtn";b.className="voiceBtn";b.type="button";b.textContent="🎙️";b.title="Parler";c.insertBefore(b,s);const R=window.SpeechRecognition||window.webkitSpeechRecognition;if(R){const r=new R();r.lang="fr-FR";r.interimResults=true;r.continuous=false;r.onstart=()=>{b.classList.add("live");document.getElementById("voiceHint").style.display="block"};r.onend=()=>{b.classList.remove("live");document.getElementById("voiceHint").style.display="none"};r.onresult=e=>{let t="";for(let j=e.resultIndex;j<e.results.length;j++)t+=e.results[j][0].transcript;if(t)i.value=t;if(e.results[e.results.length-1].isFinal)setTimeout(()=>{if(i.value.trim())s.click()},150)};b.onclick=()=>{try{r.start()}catch(e){}}}else{b.disabled=true;b.style.opacity=".35"}}const sync=()=>{if(!window.visualViewport)return;const v=visualViewport,k=Math.max(0,window.innerHeight-v.height-v.offsetTop);document.documentElement.style.setProperty("--kb",Math.min(k,380)+"px");const m=document.getElementById("messages");if(m)setTimeout(()=>m.scrollTop=m.scrollHeight,20)};if(window.visualViewport){visualViewport.addEventListener("resize",sync);visualViewport.addEventListener("scroll",sync)}window.addEventListener("orientationchange",()=>setTimeout(sync,300));sync();i.addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();s.click()}});const p=document.getElementById("imagePrompt");if(p)p.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const b=document.getElementById("genBtn");if(b)b.click()}})})();</script>'
-              s=s.replace('</body>',addon+'</body>')
-              p.write_text(s,encoding='utf-8')
-          Path('manifest.webmanifest').write_text('{"name":"Velvet AI","short_name":"Velvet AI","start_url":"./","display":"standalone","background_color":"#080808","theme_color":"#080808","lang":"fr","icons":[]}',encoding='utf-8')
-          s=p.read_text(encoding='utf-8')
-          if '<link rel="manifest"' not in s:
-              p.write_text(s.replace('</head>','<link rel="manifest" href="manifest.webmanifest"></head>'),encoding='utf-8')
-          PY
+      - name: Optimiser le site
+        run: python3 scripts/upgrade.py
       - name: Préparer le site
         uses: actions/upload-pages-artifact@v3
         with:
