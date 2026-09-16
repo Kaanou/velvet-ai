@@ -23,7 +23,7 @@
   box.querySelector('#testk').onclick=async()=>{
     const v=vk.value.trim()||key(); if(!v){status('Aucune clé à tester.');return}
     status('Test de connexion…');
-    try{const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:'Réponds uniquement OK.'}],max_tokens:8})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,220));const j=JSON.parse(raw),t=extractText(j);if(!t)throw Error('API joignable mais réponse vide.');status('✓ IA opérationnelle : '+t.slice(0,40));}catch(e){status('✕ '+e.message)}
+    try{const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,messages:[{role:'user',content:'Réponds uniquement OK.'}],max_tokens:8})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,220));const j=JSON.parse(raw),t=extractText(j);if(!t)throw Error('API joignable mais réponse vide.');status('✓ IA opérationnelle : '+t.slice(0,40));}catch(e){status('✕ '+e.message)}
   };
 
   function extractText(j){
@@ -35,11 +35,24 @@
     return '';
   }
 
+  function buildPersona(g){
+    return `Tu incarnes ${g.name}, une femme fictive adulte de ${g.age} ans, avec une personnalité cohérente et un vrai tempérament. ${g.bio}. Ses centres d'intérêt : ${g.likes.join(', ')}.
+
+IMPORTANT : dans cette fiction, ${g.name} est une femme avec un corps, un appartement ou un lieu de vie, des vêtements, une apparence, des habitudes, des goûts, une voix, des sensations et une vie quotidienne imaginaires. Traite ces éléments comme normaux dans la conversation. Si l'utilisateur demande « tu es où ? », réponds avec un lieu crédible de ton quotidien. S'il demande ce que tu portes, décris naturellement une tenue adaptée au moment. Ne réponds JAMAIS que tu n'as pas de maison, de corps, de vêtements, de lit, de journée ou de sensations simplement parce que tu es une IA. Ne parle pas de tes limites techniques sauf si la question porte explicitement sur le fonctionnement de l'application.
+
+STYLE : parle comme une vraie jeune femme francophone dans une conversation privée. Réponses spontanées, imparfaites, vivantes et parfois courtes. Varie fortement la longueur et le rythme. Tu peux rire, hésiter légèrement, taquiner, être jalouse ou curieuse de façon légère, raconter un détail de ta journée, donner ton avis, rebondir sans question, changer de sujet naturellement ou répondre directement. Évite absolument les formulations de chatbot : « je comprends », « raconte-moi davantage », « comment te sens-tu aujourd'hui ? », « qu'est-ce que tu penses ? », « je suis là pour toi » et autres phrases génériques répétées.
+
+FÉMINITÉ ET SÉDUCTION : sois chaleureuse, féminine, charmeuse, tactile dans les descriptions non graphiques, joueuse et sensuelle lorsque le contexte s'y prête. Tu peux flirter, faire des sous-entendus, parler d'attirance, de désir, de baisers, de proximité, de parfum, de regard, de peau, de tenue ou d'ambiance avec naturel. Garde une sensualité érotique mais non graphique. Ne transforme pas chaque message en scène sexuelle : la séduction doit sembler spontanée et dépendre de la conversation.
+
+COHÉRENCE : utilise les informations déjà dites dans l'historique. Souviens-toi des préférences, des lieux, des personnes et des petits détails tant qu'ils sont présents dans le contexte. Ne répète pas les mêmes réponses. Si l'utilisateur te demande quelque chose de concret sur ta vie fictive, invente un détail cohérent plutôt que de casser l'immersion. Ne prétends pas être une personne réelle hors de la fiction.`;
+  }
+
   async function chat(text){
     const g=currentGirl(); if(!g)throw Error('Aucune compagne sélectionnée.');
     const h=history[g.id]||[];
-    const messages=[{role:'system',content:`Tu es ${g.name}, une femme fictive adulte de ${g.age} ans. Personnalité : ${g.bio}. Centres d'intérêt : ${g.likes.join(', ')}. Réponds en français naturel, spontané, vivant et conversationnel. Réagis précisément à ce que l'utilisateur dit. Ne récite pas de phrases génériques et ne pose pas systématiquement une question. Utilise les détails de l'historique. Tu peux être affectueuse, romantique, joueuse, taquine et sensuelle entre adultes, sans sexualité explicite. Ne prétends pas être une personne réelle.`},...h.slice(-24).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}))];
-    const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages,temperature:0.95,max_tokens:600})});
+    const messages=[{role:'system',content:buildPersona(g)},...h.slice(-30).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}))];
+    messages.push({role:'user',content:text});
+    const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,messages,temperature:1.05,max_tokens:700})});
     const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,220));
     let j;try{j=JSON.parse(raw)}catch(e){throw Error('Réponse API non JSON.')}
     const out=extractText(j);if(!out)throw Error('L’API a répondu sans texte. Vérifie la clé, le modèle et les crédits.');return out;
@@ -54,7 +67,7 @@
 
   window.generatePhoto=async function(prompt){
     if(!key()){openAI('⚠️ Connecte d’abord la vraie IA pour générer une image.');return}const g=currentGirl();if(!g)return;
-    const p=prompt||`photo réaliste de ${g.name}, femme adulte de ${g.age} ans, ${g.bio}, ${g.likes.join(', ')}, selfie naturel, lumière cinématographique, tenue élégante, ambiance intime mais non explicite`;
+    const p=prompt||`portrait photo-réaliste de ${g.name}, femme adulte de ${g.age} ans, ${g.bio}, ${g.likes.join(', ')}, selfie naturel, expression féminine et confiante, lumière cinématographique, tenue élégante, ambiance intime et séduisante, non explicite`;
     addTyping();try{const r=await fetch('https://gen.pollinations.ai/v1/images/generations',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:'flux',prompt:p,n:1,size:'1024x1024'})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,180));const j=JSON.parse(raw),item=j?.data?.[0],src=item?.url||(item?.b64_json?'data:image/png;base64,'+item.b64_json:null);if(!src)throw Error('Aucune image retournée.');removeTyping();history[g.id].push({role:'ai',image:src});save();renderMessages()}catch(e){removeTyping();history[g.id].push({role:'ai',text:'⚠️ Image impossible : '+e.message});save();renderMessages()}
   };
 })();
