@@ -51,14 +51,14 @@ function toggleSettings(){const s=$('settings');s.style.display=s.style.display=
 function clearChat(){if(current===null)return;delete history[girls[current].id];save();openGirl(current);$('settings').style.display='none'}
 function addTyping(){removeTyping();const x=document.createElement('div');x.className='row ai';x.id='typing';x.innerHTML='<div class="bubble typing"><i class="dot"></i><i class="dot"></i><i class="dot"></i></div>';$('messages').appendChild(x);$('messages').scrollTop=$('messages').scrollHeight}
 function removeTyping(){const x=$('typing');if(x)x.remove()}
-function send(){const input=$('input');const text=input.value.trim();if(!text||current===null)return;if(typeof window.send==='function'&&window.send.toString().includes('generatePhoto')){window.send();return;}const g=girls[current];input.value='';history[g.id]=history[g.id]||[];history[g.id].push({role:'me',text});save();renderMessages();addTyping();setTimeout(()=>{removeTyping();history[g.id].push({role:'ai',text:reply(g,text)});save();renderMessages()},0)}
+function send(){const input=$('input');const text=input.value.trim();if(!text||current===null)return;const g=girls[current];input.value='';history[g.id]=history[g.id]||[];history[g.id].push({role:'me',text});save();renderMessages();addTyping();setTimeout(()=>{removeTyping();history[g.id].push({role:'ai',text:reply(g,text)});save();renderMessages()},0)}
 $('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send()}});
 function pick(a){return a[Math.floor(Math.random()*a.length)]}
-function reply(g,t){const s=t.toLowerCase();if(/^(salut|bonjour|coucou|hey|bonsoir|yo)\b/.test(s))return pick(['Salut toi. Ça me fait plaisir.','Hey. Je t’écoute.','Coucou.']);if(/comment tu vas|ça va|ca va/.test(s))return pick(['Plutôt bien. Et toi ?','Ça va. Raconte-moi.']);return pick(['Je vois. Continue.','Attends… développe.','D’accord.']);}
+function reply(g,t){const s=t.toLowerCase();if(/^(salut|bonjour|coucou|hey|bonsoir|yo)\b/.test(s))return pick(['Salut toi.','Hey.','Coucou.']);if(/comment tu vas|ça va|ca va/.test(s))return pick(['Plutôt bien. Et toi ?','Ça va.']);return pick(['Je vois.','Continue.','D’accord.']);}
 function goHome(){$('chat').style.display='none';$('home').style.display='block';$('settings').style.display='none';current=null}
 render();
 </script>
-<script src="./ai.js?v=4"></script>
-<script src="./model-routing-override.js?v=4"></script>
-<script src="./ai.js"></script></body>
+<script src="./ai.js?v=5"></script>
+<script src="./model-routing-override.js?v=5"></script>
+</body>
 </html>
