@@ -1,4 +1,4 @@
-name: Velvet AI — amélioration automatique
+name: Velvet AI upgrade
 on:
   push:
     branches: [main]
@@ -10,32 +10,34 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Améliorer l'interface mobile et les interactions
-        shell: python
+      - name: Patch mobile UX
         run: |
+          python3 - <<'PY'
           from pathlib import Path
-          p=Path('index.html'); s=p.read_text(encoding='utf-8')
-          if 'VELVET_UPGRADE_V2' not in s:
-              addon=r'''
-<!-- VELVET_UPGRADE_V2 -->
+          p=Path('index.html')
+          s=p.read_text(encoding='utf-8')
+          if 'VELVET_UPGRADE_V3' not in s:
+              addon='''
+<!-- VELVET_UPGRADE_V3 -->
 <style>
-.voiceBtn{width:50px;height:50px;flex:0 0 50px;border:1px solid #302b2d;border-radius:16px;background:#121112;color:#ddd;font-size:18px}.voiceBtn.live{background:#ef4444;border-color:#ef4444;color:#fff}.composer{padding-left:0;padding-right:0}.composer input{min-width:0}.messages{padding-bottom:30px}.voiceHint{position:fixed;z-index:70;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#181617;color:#eee;border:1px solid #302b2d;border-radius:99px;padding:9px 13px;font-size:11px;display:none;box-shadow:0 10px 40px #000}
-@media(max-width:560px){.voiceBtn{width:46px;height:50px;flex-basis:46px}.composer{gap:5px}.composer input{padding:0 13px}.send{min-width:70px}}
+.voiceBtn{width:50px;height:50px;flex:0 0 50px;border:1px solid #302b2d;border-radius:16px;background:#121112;color:#ddd;font-size:18px}.voiceBtn.live{background:#ef4444;border-color:#ef4444;color:#fff}.voiceHint{position:fixed;z-index:70;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#181617;color:#eee;border:1px solid #302b2d;border-radius:99px;padding:9px 13px;font-size:11px;display:none;box-shadow:0 10px 40px #000}.composer{gap:6px}
+@media(max-width:560px){.voiceBtn{width:46px;height:50px;flex-basis:46px}.send{min-width:70px}}
 </style>
 <div class="voiceHint" id="voiceHint">Je t’écoute…</div>
 <script>
 (function(){
- const input=document.getElementById('input'),sendBtn=document.getElementById('sendBtn'),composer=sendBtn&&sendBtn.parentElement;
- if(!input||!composer)return;
- if(!document.getElementById('voiceBtn')){const b=document.createElement('button');b.id='voiceBtn';b.className='voiceBtn';b.type='button';b.textContent='🎙️';b.title='Parler';b.setAttribute('aria-label','Parler');composer.insertBefore(b,sendBtn);
+ const input=document.getElementById('input'),send=document.getElementById('sendBtn'),composer=send&&send.parentElement;
+ if(!input||!send||!composer)return;
+ if(!document.getElementById('voiceBtn')){
+  const b=document.createElement('button');b.id='voiceBtn';b.className='voiceBtn';b.type='button';b.textContent='🎙️';b.title='Parler';composer.insertBefore(b,send);
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){b.style.opacity='.45';b.title='Dictée non disponible dans ce navigateur';}
-  else{const r=new SR();r.lang='fr-FR';r.interimResults=true;r.continuous=false;r.onstart=()=>{b.classList.add('live');document.getElementById('voiceHint').style.display='block'};r.onend=()=>{b.classList.remove('live');document.getElementById('voiceHint').style.display='none'};r.onerror=()=>{b.classList.remove('live');document.getElementById('voiceHint').style.display='none'};r.onresult=e=>{let text='';for(let i=e.resultIndex;i<e.results.length;i++)text+=e.results[i][0].transcript;if(text)input.value=text;if(e.results[e.results.length-1].isFinal)setTimeout(()=>{if(input.value.trim())sendBtn.click()},180)};b.onclick=()=>{try{r.start()}catch(e){}};}
+  if(SR){const r=new SR();r.lang='fr-FR';r.interimResults=true;r.continuous=false;r.onstart=()=>{b.classList.add('live');document.getElementById('voiceHint').style.display='block'};r.onend=()=>{b.classList.remove('live');document.getElementById('voiceHint').style.display='none'};r.onresult=e=>{let t='';for(let i=e.resultIndex;i<e.results.length;i++)t+=e.results[i][0].transcript;if(t)input.value=t;if(e.results[e.results.length-1].isFinal)setTimeout(()=>{if(input.value.trim())send.click()},150)};b.onclick=()=>{try{r.start()}catch(e){}}}else{b.disabled=true;b.style.opacity='.35'}
  }
- const root=document.documentElement;const sync=()=>{if(!window.visualViewport)return;const vv=visualViewport;const keyboard=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);root.style.setProperty('--kb',Math.min(keyboard,380)+'px');setTimeout(()=>{const m=document.getElementById('messages');if(m)m.scrollTop=m.scrollHeight},25)};if(window.visualViewport){visualViewport.addEventListener('resize',sync);visualViewport.addEventListener('scroll',sync)}window.addEventListener('orientationchange',()=>setTimeout(sync,300));sync();
- input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendBtn.click()}});
+ const sync=()=>{if(!window.visualViewport)return;const vv=visualViewport;const kb=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);document.documentElement.style.setProperty('--kb',Math.min(kb,380)+'px');const m=document.getElementById('messages');if(m)setTimeout(()=>m.scrollTop=m.scrollHeight,20)};
+ if(window.visualViewport){visualViewport.addEventListener('resize',sync);visualViewport.addEventListener('scroll',sync)}window.addEventListener('orientationchange',()=>setTimeout(sync,300));sync();
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send.click()}});
  const ip=document.getElementById('imagePrompt');if(ip)ip.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const b=document.getElementById('genBtn');if(b)b.click()}});
- document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('menu');if(m)m.style.display='none';const modal=document.getElementById('modal');if(modal)modal.style.display='none';const profile=document.getElementById('profile');if(profile)profile.style.display='none'}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){['menu','modal','profile'].forEach(id=>{const x=document.getElementById(id);if(x)x.style.display='none'})}});
 })();
 </script>
 '''
@@ -45,10 +47,12 @@ jobs:
           s=p.read_text(encoding='utf-8')
           if '<link rel="manifest"' not in s:
               p.write_text(s.replace('</head>','<link rel="manifest" href="manifest.webmanifest"></head>'),encoding='utf-8')
-      - name: Publier les améliorations
+          PY
+      - name: Commit changes
         run: |
           git config user.name "Velvet AI Bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add index.html manifest.webmanifest
-          git diff --cached --quiet || git commit -m "Upgrade Velvet AI mobile UX"
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "Improve mobile UX and voice input"
           git push
