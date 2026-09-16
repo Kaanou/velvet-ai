@@ -135,3 +135,5 @@ COHÉRENCE : utilise l’historique, évite les répétitions et ne réutilise p
     } catch(e) { removeTyping(); console.error(e); history[g.id]=history[g.id]||[]; history[g.id].push({role:'ai',text:'Je n’arrive pas à générer la photo pour le moment.'}); save(); renderMessages(); }
   };
 })();
+/* VELVET_GALLERY_UI_LOADER */
+(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();
