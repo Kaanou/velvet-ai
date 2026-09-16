@@ -1,0 +1,23 @@
+name: Wire gallery UI
+on:
+  push:
+    branches: [main]
+permissions:
+  contents: write
+jobs:
+  wire:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Append gallery loader
+        run: |
+          marker='VELVET_GALLERY_UI_LOADER'
+          if ! grep -q "$marker" ai.js; then
+            printf '\n/* %s */\n(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();\n' "$marker" >> ai.js
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            git add ai.js
+            git commit -m 'chore: load companion gallery UI'
+            git push
+          fi
