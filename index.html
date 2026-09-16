@@ -61,5 +61,5 @@ function goHome(){$('chat').style.display='none';$('home').style.display='block'
 function updateKeyboardPosition(){if(!$('chat')||$('chat').style.display==='none')return;const vv=window.visualViewport;if(!vv)return;const keyboard=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);$('composer').style.bottom=(8+keyboard)+'px';$('tools').style.bottom=(65+keyboard)+'px';$('messages').style.bottom=(120+keyboard)+'px';requestAnimationFrame(()=>{$('messages').scrollTop=$('messages').scrollHeight})}
 if(window.visualViewport){visualViewport.addEventListener('resize',updateKeyboardPosition);visualViewport.addEventListener('scroll',updateKeyboardPosition)}window.addEventListener('resize',updateKeyboardPosition);render();
 </script>
-</body>
+<script src="./ai.js"></script></body>
 </html>
