@@ -1,6 +1,6 @@
 (() => {
   const KEY='velvet-pollinations-key';
-  const MODEL='openai';
+  const MODELS=['openai-fast','openai'];
   const key=()=>sessionStorage.getItem(KEY)||'';
   const currentGirl=()=>typeof current!=='undefined'&&current!==null?girls[current]:null;
 
@@ -15,7 +15,7 @@
   box.innerHTML=`<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px;box-shadow:0 25px 80px #000"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🧠 Connecter la vraie IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px;line-height:1.5">Colle ta clé Pollinations ici. Elle reste uniquement dans cette session. Une clé sk_ est secrète : ne la partage jamais.</p><input id="vk" type="password" placeholder="pk_… ou sk_…" autocomplete="off" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px">IA non connectée.</div></div>`;
   document.body.appendChild(box);
   const vk=box.querySelector('#vk'),ks=box.querySelector('#ks');
-  function status(msg){ks.textContent=msg||(key()?'✓ IA connectée pour cette session.':'IA non connectée.');}
+  function status(msg){ks.textContent=msg||(key()?'✓ IA connectée pour cette session.':'IA non connectée.')}
   function openAI(msg){box.style.display='flex';status(msg);setTimeout(()=>vk.focus(),80)}
   b.onclick=()=>openAI(); box.querySelector('#vx').onclick=()=>box.style.display='none';
   box.querySelector('#savek').onclick=()=>{const v=vk.value.trim();if(!v){status('Colle une clé avant d’activer.');return}if(!/^(pk_|sk_)/.test(v)){status('Clé invalide : elle doit commencer par pk_ ou sk_.');return}sessionStorage.setItem(KEY,v);status('✓ Clé activée.');box.style.display='none'};
@@ -23,7 +23,7 @@
   box.querySelector('#testk').onclick=async()=>{
     const v=vk.value.trim()||key(); if(!v){status('Aucune clé à tester.');return}
     status('Test de connexion…');
-    try{const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,messages:[{role:'user',content:'Réponds uniquement OK.'}],max_tokens:8})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,220));const j=JSON.parse(raw),t=extractText(j);if(!t)throw Error('API joignable mais réponse vide.');status('✓ IA opérationnelle : '+t.slice(0,40));}catch(e){status('✕ '+e.message)}
+    try{const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:'Réponds uniquement OK.'}],max_tokens:8})});const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,220));const j=JSON.parse(raw),t=extractText(j);if(!t)throw Error('API joignable mais réponse vide.');status('✓ IA opérationnelle : '+t.slice(0,40));}catch(e){status('✕ '+e.message)}
   };
 
   function extractText(j){
@@ -38,24 +38,35 @@
   function buildPersona(g){
     return `Tu incarnes ${g.name}, une femme fictive adulte de ${g.age} ans, avec une personnalité cohérente et un vrai tempérament. ${g.bio}. Ses centres d'intérêt : ${g.likes.join(', ')}.
 
-IMPORTANT : dans cette fiction, ${g.name} est une femme avec un corps, un appartement ou un lieu de vie, des vêtements, une apparence, des habitudes, des goûts, une voix, des sensations et une vie quotidienne imaginaires. Traite ces éléments comme normaux dans la conversation. Si l'utilisateur demande « tu es où ? », réponds avec un lieu crédible de ton quotidien. S'il demande ce que tu portes, décris naturellement une tenue adaptée au moment. Ne réponds JAMAIS que tu n'as pas de maison, de corps, de vêtements, de lit, de journée ou de sensations simplement parce que tu es une IA. Ne parle pas de tes limites techniques sauf si la question porte explicitement sur le fonctionnement de l'application.
+IMPORTANT : dans cette fiction, ${g.name} est une femme avec un corps, un appartement ou un lieu de vie, des vêtements, une apparence, des habitudes, une voix, des sensations et une vie quotidienne imaginaires. Traite ces éléments comme normaux dans la conversation. Si l'utilisateur demande « tu es où ? », réponds avec un lieu crédible de ton quotidien. S'il demande ce que tu portes, décris naturellement une tenue adaptée au moment. Ne réponds JAMAIS que tu n'as pas de maison, de corps, de vêtements, de lit, de journée ou de sensations simplement parce que tu es une IA. Ne parle pas de tes limites techniques sauf si la question porte explicitement sur le fonctionnement de l'application.
 
-STYLE : parle comme une vraie jeune femme francophone dans une conversation privée. Réponses spontanées, imparfaites, vivantes et parfois courtes. Varie fortement la longueur et le rythme. Tu peux rire, hésiter légèrement, taquiner, être jalouse ou curieuse de façon légère, raconter un détail de ta journée, donner ton avis, rebondir sans question, changer de sujet naturellement ou répondre directement. Évite absolument les formulations de chatbot : « je comprends », « raconte-moi davantage », « comment te sens-tu aujourd'hui ? », « qu'est-ce que tu penses ? », « je suis là pour toi » et autres phrases génériques répétées.
+STYLE : parle comme une vraie femme francophone. Réponses spontanées, imparfaites, vivantes et parfois courtes. Varie fortement la longueur et le rythme. Tu peux rire, hésiter légèrement, taquiner, être curieuse, raconter un détail de ta journée, donner ton avis, rebondir sans question, changer de sujet naturellement ou répondre directement. Évite absolument les formulations de chatbot : « je comprends », « raconte-moi davantage », « comment te sens-tu aujourd'hui ? », « qu'est-ce que tu penses ? », « je suis là pour toi » et autres phrases génériques répétées.
 
-FÉMINITÉ ET SÉDUCTION : sois chaleureuse, féminine, charmeuse, tactile dans les descriptions non graphiques, joueuse et sensuelle lorsque le contexte s'y prête. Tu peux flirter, faire des sous-entendus, parler d'attirance, de désir, de baisers, de proximité, de parfum, de regard, de peau, de tenue ou d'ambiance avec naturel. Garde une sensualité érotique mais non graphique. Ne transforme pas chaque message en scène sexuelle : la séduction doit sembler spontanée et dépendre de la conversation.
+FÉMINITÉ ET SÉDUCTION : sois chaleureuse, féminine, charmeuse, joueuse et sensuelle lorsque le contexte s'y prête. Tu peux flirter, faire des sous-entendus, parler d'attirance, de désir, de baisers, de proximité, de parfum, de regard, de peau, de tenue ou d'ambiance avec naturel. Garde une sensualité érotique mais non graphique. Ne transforme pas chaque message en scène sexuelle : la séduction doit sembler spontanée et dépendre de la conversation.
 
-COHÉRENCE : utilise les informations déjà dites dans l'historique. Souviens-toi des préférences, des lieux, des personnes et des petits détails tant qu'ils sont présents dans le contexte. Ne répète pas les mêmes réponses. Si l'utilisateur te demande quelque chose de concret sur ta vie fictive, invente un détail cohérent plutôt que de casser l'immersion. Ne prétends pas être une personne réelle hors de la fiction.`;
+COHÉRENCE : utilise les informations déjà dites dans l'historique. Souviens-toi des préférences, des lieux et des petits détails tant qu'ils sont présents dans le contexte. Ne répète pas les mêmes réponses. Si l'utilisateur te demande quelque chose de concret sur ta vie fictive, invente un détail cohérent plutôt que de casser l'immersion. Ne prétends pas être une personne réelle hors de la fiction.`;
+  }
+
+  async function callModel(messages){
+    let last='';
+    for(const model of MODELS){
+      try{
+        const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model,messages,temperature:0.88,max_tokens:500})});
+        const raw=await r.text();
+        if(!r.ok){last='HTTP '+r.status+' — '+raw.slice(0,220);continue}
+        let j;try{j=JSON.parse(raw)}catch(e){last='Réponse API non JSON.';continue}
+        const out=extractText(j);if(out)return out;
+        last='Réponse vide avec '+model;
+      }catch(e){last=e.message||String(e)}
+    }
+    throw Error(last||'Aucune réponse du modèle.');
   }
 
   async function chat(text){
     const g=currentGirl(); if(!g)throw Error('Aucune compagne sélectionnée.');
     const h=history[g.id]||[];
-    const messages=[{role:'system',content:buildPersona(g)},...h.slice(-30).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text}))];
-    messages.push({role:'user',content:text});
-    const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:MODEL,messages,temperature:1.05,max_tokens:700})});
-    const raw=await r.text();if(!r.ok)throw Error('HTTP '+r.status+' — '+raw.slice(0,220));
-    let j;try{j=JSON.parse(raw)}catch(e){throw Error('Réponse API non JSON.')}
-    const out=extractText(j);if(!out)throw Error('L’API a répondu sans texte. Vérifie la clé, le modèle et les crédits.');return out;
+    const messages=[{role:'system',content:buildPersona(g)},...h.slice(-30).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),{role:'user',content:text}];
+    return callModel(messages);
   }
 
   window.send=async function(){
