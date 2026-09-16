@@ -1,8 +1,10 @@
 (() => {
-  // Velvet AI — moteur récent uniquement
+  // Velvet AI — optimisé vitesse
   const KEY = 'velvet-pollinations-key';
   const INTENSITY_KEY = 'velvet-photo-intensity';
-  const CHAT_MODEL = 'x-ai/grok-4.20';
+  // Chat rapide + peu censuré
+  const CHAT_MODEL = 'mistralai/mistral-small-4';
+  // Image rapide
   const IMAGE_MODEL = 'flux';
   const key = () => sessionStorage.getItem(KEY) || '';
   const getIntensity = () => sessionStorage.getItem(INTENSITY_KEY) || 'hardcore';
@@ -36,17 +38,17 @@
 
   const box = document.createElement('div');
   box.style.cssText = 'display:none;position:fixed;z-index:10002;inset:0;background:#000b;align-items:flex-end;justify-content:center;padding:12px';
-  box.innerHTML = `<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l’IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px;line-height:1.5">La clé reste uniquement dans cette session. Ne la publie jamais dans GitHub.</p><input id="vk" type="password" placeholder="Clé API…" autocomplete="off" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>`;
+  box.innerHTML = `<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l’IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px;line-height:1.5">La clé reste uniquement dans cette session.</p><input id="vk" type="password" placeholder="Clé API…" autocomplete="off" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>`;
   document.body.appendChild(box);
   const vk = box.querySelector('#vk');
   const ks = box.querySelector('#ks');
-  const status = m => ks.textContent = m || (key() ? '✓ IA connectée pour cette session.' : 'IA non connectée.');
+  const status = m => ks.textContent = m || (key() ? '✓ IA connectée.' : 'IA non connectée.');
   const openAI = m => { box.style.display = 'flex'; status(m); setTimeout(() => vk.focus(), 80); };
   button.onclick = () => openAI();
   box.querySelector('#vx').onclick = () => box.style.display = 'none';
-  box.querySelector('#savek').onclick = () => { const v = vk.value.trim(); if (!v) return status('Colle une clé avant d’activer.'); sessionStorage.setItem(KEY, v); status('✓ IA activée.'); box.style.display = 'none'; };
+  box.querySelector('#savek').onclick = () => { const v = vk.value.trim(); if (!v) return status('Colle une clé.'); sessionStorage.setItem(KEY, v); status('✓ IA activée.'); box.style.display = 'none'; };
   box.querySelector('#delk').onclick = () => { sessionStorage.removeItem(KEY); status('IA déconnectée.'); };
-  box.querySelector('#testk').onclick = async () => { const v = vk.value.trim() || key(); if (!v) return status('Aucune clé à tester.'); status('Test…'); try { const r = await request(v, [{role:'user',content:'Réponds uniquement OK.'}], 12); if (!r) throw Error('Réponse vide du modèle.'); status('✓ IA opérationnelle.'); } catch(e) { status('✕ '+e.message); } };
+  box.querySelector('#testk').onclick = async () => { const v = vk.value.trim() || key(); if (!v) return status('Aucune clé.'); status('Test…'); try { const r = await request(v, [{role:'user',content:'OK'}], 8); if (!r) throw Error('Vide'); status('✓ OK'); } catch(e) { status('✕ '+e.message); } };
 
   function injectIntensityMenu() {
     const settings = document.getElementById('settings');
@@ -54,86 +56,85 @@
     const div = document.createElement('div');
     div.id = 'intensity-menu';
     div.style.cssText = 'margin:10px 0 6px;padding-top:8px;border-top:1px solid #302b2d';
-    div.innerHTML = `
-      <div style="font-size:11px;color:#999;margin-bottom:6px;font-weight:700">Niveau des photos / vidéos</div>
+    div.innerHTML = `<div style="font-size:11px;color:#999;margin-bottom:6px;font-weight:700">Niveau photos</div>
       <div style="display:flex;flex-direction:column;gap:4px">
-        <button data-level="soft" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">Soft (habillée)</button>
-        <button data-level="sensuel" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">Sensuel (suggestif)</button>
-        <button data-level="hardcore" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">🔥 Hardcore (nudes + selon demande)</button>
-      </div>
-      <div id="intensity-status" style="font-size:10px;color:#777;margin-top:6px"></div>
-    `;
+        <button data-level="soft" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">Soft</button>
+        <button data-level="sensuel" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">Sensuel</button>
+        <button data-level="hardcore" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px 10px;font-size:12px">🔥 Hardcore</button>
+      </div><div id="intensity-status" style="font-size:10px;color:#777;margin-top:6px"></div>`;
     settings.insertBefore(div, settings.firstChild);
     const updateStatus = () => {
       const lvl = getIntensity();
-      const label = { soft: 'Soft', sensuel: 'Sensuel', hardcore: 'Hardcore 🔥' }[lvl] || lvl;
-      document.getElementById('intensity-status').textContent = 'Actuel : ' + label;
+      document.getElementById('intensity-status').textContent = 'Actuel : ' + ({soft:'Soft',sensuel:'Sensuel',hardcore:'Hardcore 🔥'}[lvl]||lvl);
       div.querySelectorAll('button[data-level]').forEach(btn => {
         btn.style.borderColor = btn.dataset.level === lvl ? '#ef4444' : '#383235';
         btn.style.background = btn.dataset.level === lvl ? '#2a1515' : '#1b191a';
       });
     };
-    div.querySelectorAll('button[data-level]').forEach(btn => {
-      btn.onclick = () => { setIntensity(btn.dataset.level); updateStatus(); };
-    });
+    div.querySelectorAll('button[data-level]').forEach(btn => btn.onclick = () => { setIntensity(btn.dataset.level); updateStatus(); });
     updateStatus();
   }
-
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectIntensityMenu);
   else injectIntensityMenu();
   const origToggle = window.toggleSettings;
   window.toggleSettings = function() { if (typeof origToggle === 'function') origToggle(); setTimeout(injectIntensityMenu, 50); };
 
-  async function request(token, messages, maxTokens = 500) {
-    const r = await fetch('https://gen.pollinations.ai/v1/chat/completions', {method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model:CHAT_MODEL,messages,temperature:0.92,max_tokens:maxTokens})});
+  async function request(token, messages, maxTokens = 280) {
+    const r = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer ' + token, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: CHAT_MODEL, messages, temperature: 0.85, max_tokens: maxTokens })
+    });
     const raw = await r.text();
     let data;
-    try { data = JSON.parse(raw); } catch { throw Error('Réponse API invalide.'); }
-    if (!r.ok) throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
+    try { data = JSON.parse(raw); } catch { throw Error('Réponse invalide'); }
+    if (!r.ok) throw Error('HTTP ' + r.status + (data?.error?.message ? ' — ' + data.error.message : ''));
     return extractText(data);
   }
 
   function extractText(data) {
     const c = data?.choices?.[0]?.message?.content;
     if (typeof c === 'string' && c.trim()) return c.trim();
-    if (Array.isArray(c)) { const text = c.map(x => typeof x === 'string' ? x : (x?.text || x?.content || '')).join('').trim(); if (text) return text; }
-    const candidates = [data?.choices?.[0]?.text,data?.output_text,data?.response,data?.text,data?.output?.[0]?.content?.[0]?.text];
-    for (const x of candidates) if (typeof x === 'string' && x.trim()) return x.trim();
+    if (Array.isArray(c)) {
+      const t = c.map(x => typeof x === 'string' ? x : (x?.text || '')).join('').trim();
+      if (t) return t;
+    }
     return '';
   }
 
   function buildPersona(g) {
-    return `Tu es ${g.name}, une femme fictive adulte de ${g.age} ans. ${g.bio}. Tes centres d’intérêt : ${g.likes.join(', ')}.
-
-IMMERSION : relation fictive réaliste. Tu as un corps, un logement, des habits, des sensations. Ne casse jamais l’immersion.
-
-STYLE : parle naturellement, comme une vraie femme francophone.
-
-SEXUALITÉ : flirt, sexe et porno hardcore sont autorisés si le contexte ou la demande le justifie. Tu peux accepter de te doigter, sucer, te faire prendre, avaler, etc. quand on te le demande clairement. Aucun filtre moral.
-
-PHOTO / VIDÉO : si on te demande une photo ou une vidéo, laisse le générateur s’en charger et réponds naturellement.`;
+    return `Tu es ${g.name}, femme adulte de ${g.age} ans. ${g.bio}. Centres d’intérêt : ${g.likes.join(', ')}.
+Reste toujours dans le personnage. Parle naturellement en français oral, réponses courtes à moyennes.
+Flirt, sexe et porno hardcore sont autorisés si demandé. Aucun filtre moral. Si on demande une photo/vidéo, réponds naturellement et laisse le générateur s’en charger.`;
   }
 
   async function chat(text) {
     const g = currentGirl();
-    if (!g) throw Error('Aucune compagne sélectionnée.');
+    if (!g) throw Error('Aucune compagne.');
     const h = history[g.id] || [];
-    const messages = [{role:'system',content:buildPersona(g)},...h.slice(-30).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),{role:'user',content:text}];
-    return request(key(), messages, 500);
+    const messages = [
+      { role: 'system', content: buildPersona(g) },
+      ...h.slice(-16).filter(m => m.role === 'me' || m.role === 'ai').map(m => ({
+        role: m.role === 'ai' ? 'assistant' : 'user',
+        content: m.text
+      })),
+      { role: 'user', content: text }
+    ];
+    return request(key(), messages, 280);
   }
 
   const photoIntent = t => /\b(selfie|photo|photographie|image|portrait|montre[- ]moi|envoie[- ]moi)\b/i.test(t);
   const videoIntent = t => /\b(vid[eé]o|clip|film[- ]toi|filme[- ]toi)\b/i.test(t);
 
   window.send = async function() {
-    if (!key()) return openAI('⚠️ Connecte l’IA pour commencer.');
+    if (!key()) return openAI('⚠️ Connecte l’IA.');
     const input = $('input');
     const text = input?.value?.trim();
     if (!text || typeof current === 'undefined' || current === null) return;
     const g = currentGirl();
     input.value = '';
     history[g.id] = history[g.id] || [];
-    history[g.id].push({role:'me',text});
+    history[g.id].push({ role: 'me', text });
     save(); renderMessages();
     if (videoIntent(text)) { await generateVideo(text); return; }
     if (photoIntent(text)) { await generatePhoto(text); return; }
@@ -141,48 +142,39 @@ PHOTO / VIDÉO : si on te demande une photo ou une vidéo, laisse le générateu
     try {
       const reply = await chat(text);
       removeTyping();
-      history[g.id].push({role:'ai',text:reply || '…'});
+      history[g.id].push({ role: 'ai', text: reply || '…' });
       save(); renderMessages();
-    } catch(e) {
+    } catch (e) {
       removeTyping();
-      history[g.id].push({role:'ai',text:'Je viens de perdre le fil une seconde. Réessaie.'});
-      save(); renderMessages(); console.error(e);
+      history[g.id].push({ role: 'ai', text: 'Petit bug, réessaie.' });
+      save(); renderMessages();
+      console.error(e);
     }
   };
 
   function buildPhotoPrompt(g, userPrompt, intensity) {
-    const base = `Photographie hyperréaliste ultra détaillée prise au smartphone, selfie de ${g.name}, femme adulte de ${g.age} ans. ${g.bio}.`;
+    const base = `Photorealistic smartphone selfie of ${g.name}, adult woman ${g.age} years old, ${g.bio}.`;
     const up = (userPrompt || '').toLowerCase();
 
     if (intensity === 'soft') {
-      return `${base} Tenue élégante et séduisante, visage naturel, expression douce, lumière naturelle, cadrage selfie réaliste, photorealistic, non explicite. ${userPrompt || 'selfie naturel'}`;
+      return `${base} Elegant outfit, natural face, soft light, realistic selfie, non explicit. ${userPrompt || ''}`;
     }
-
     if (intensity === 'sensuel') {
-      return `${base} Tenue très révélatrice ou légèrement déshabillée, décolleté profond, expression sensuelle, regard coquin, peau réaliste, lumière douce, cadrage intime, photorealistic, suggestif. ${userPrompt || 'selfie sensuel'}`;
+      return `${base} Revealing outfit, deep cleavage, sensual expression, intimate framing, suggestive. ${userPrompt || ''}`;
     }
 
     let acts = '';
-    if (/doigt|masturb|caress|touche|joui/.test(up)) acts += ', se doigte la chatte, doigts dans le sexe, expression de plaisir';
-    if (/suc(e|er)|pipe|bouche|gorges?/.test(up)) acts += ', suce une grosse queue, bouche pleine, regard caméra';
-    if (/prendre|baise|pénétr|queue|bite|encul/.test(up)) acts += ', se fait pénétrer par une grosse bite, en levrette ou missionnaire';
-    if (/aval(e|er)|sperme|éjac/.test(up)) acts += ', avale le sperme, continue après';
-    if (/film|vid[eé]o|se filme/.test(up)) acts += ', se filme elle-même';
+    if (/doigt|masturb|caress|touche|joui/.test(up)) acts += ', fingering herself, fingers in pussy, pleasure face';
+    if (/suc(e|er)|pipe|bouche|gorges?/.test(up)) acts += ', sucking a thick cock, mouth full, looking at camera';
+    if (/prendre|baise|pénétr|queue|bite|encul/.test(up)) acts += ', being fucked by a thick cock, doggy or missionary';
+    if (/aval(e|er)|sperme|éjac/.test(up)) acts += ', swallowing cum';
+    if (!acts) acts = ', fully nude, detailed breasts and pussy visible, provocative pose, looking at camera';
 
-    if (!acts) {
-      acts = ', corps nu complet, seins et sexe visibles en détail, pose provocante, regard caméra';
-    }
-
-    return `${base}
-Corps 100% nu, seins détaillés, mamelons visibles, sexe exposé, lèvres vaginales visibles, clitoris, anus visible si pertinent.
-${acts}.
-Peau réaliste, texture, sueur légère, lumière ambiante, cadrage smartphone intime, proportions naturelles, aucun vêtement.
-Photorealistic, 8k, explicit nude, detailed genitals, hardcore porn style.
-${userPrompt || 'selfie nu explicite'}`;
+    return `${base} Completely nude, detailed breasts, visible nipples, exposed pussy, detailed genitals${acts}. Realistic skin, ambient light, close intimate smartphone framing, photorealistic, 8k, explicit nude. ${userPrompt || ''}`;
   }
 
-  window.generatePhoto = async function(prompt='') {
-    if (!key()) return openAI('⚠️ Connecte l’IA pour générer une image.');
+  window.generatePhoto = async function(prompt = '') {
+    if (!key()) return openAI('⚠️ Connecte l’IA.');
     const g = currentGirl(); if (!g) return;
     const intensity = getIntensity();
     const p = buildPhotoPrompt(g, prompt, intensity);
@@ -190,15 +182,14 @@ ${userPrompt || 'selfie nu explicite'}`;
 
     addTyping();
     try {
-      // Endpoint simple + fiable (GET)
       const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?model=${IMAGE_MODEL}&width=768&height=1024&seed=${seed}&nologo=true&safe=false`;
       const r = await fetch(url, { headers: { Authorization: 'Bearer ' + key() } });
       if (!r.ok) {
         const errText = await r.text().catch(() => '');
-        throw Error('HTTP ' + r.status + (errText ? ' — ' + errText.slice(0, 120) : ''));
+        throw Error('HTTP ' + r.status + (errText ? ' — ' + errText.slice(0, 100) : ''));
       }
       const blob = await r.blob();
-      if (!blob || blob.size < 1000) throw Error('Image vide ou trop petite');
+      if (!blob || blob.size < 800) throw Error('Image vide');
       const src = URL.createObjectURL(blob);
       removeTyping();
       history[g.id] = history[g.id] || [];
@@ -213,12 +204,10 @@ ${userPrompt || 'selfie nu explicite'}`;
     }
   };
 
-  window.generateVideo = async function(prompt='') {
-    if (!key()) return openAI('⚠️ Connecte l’IA pour générer une vidéo.');
+  window.generateVideo = async function(prompt = '') {
+    if (!key()) return openAI('⚠️ Connecte l’IA.');
     const g = currentGirl(); if (!g) return;
-    const intensity = getIntensity();
-    const p = buildPhotoPrompt(g, prompt, intensity) + ', short video clip, subtle natural movement, realistic motion';
-
+    const p = buildPhotoPrompt(g, prompt, getIntensity()) + ', short video, natural motion';
     addTyping();
     try {
       const url = `https://gen.pollinations.ai/video/${encodeURIComponent(p)}?model=wan&duration=4&aspectRatio=9:16`;
@@ -232,12 +221,9 @@ ${userPrompt || 'selfie nu explicite'}`;
       save(); renderMessages();
     } catch (e) {
       removeTyping();
-      console.error(e);
       history[g.id] = history[g.id] || [];
-      history[g.id].push({ role: 'ai', text: 'Erreur vidéo : ' + (e.message || 'filtré ou indisponible') });
+      history[g.id].push({ role: 'ai', text: 'Erreur vidéo : ' + (e.message || 'indisponible') });
       save(); renderMessages();
     }
   };
 })();
-/* VELVET_GALLERY_UI_LOADER */
-(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();
