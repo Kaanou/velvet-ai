@@ -6,6 +6,23 @@
   const currentGirl = () => typeof current !== 'undefined' && current !== null ? girls[current] : null;
   const $ = id => document.getElementById(id);
 
+  // Plus de compagnes, ajoutées sans modifier le fonctionnement existant.
+  const extraGirls = [
+    {id:'chloe',name:'Chloé',age:24,bio:'pétillante, coquette, affectueuse',tags:['coquette','vive','affectueuse'],photo:'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=crop&w=900&q=90',intro:'Chloé. J’ai une petite faiblesse pour les conversations qui commencent innocemment et deviennent beaucoup plus intéressantes…',tone:'coquette',likes:['mode','danse','voyages']},
+    {id:'alice',name:'Alice',age:28,bio:'élégante, drôle, très sûre d’elle',tags:['élégante','drôle','assurée'],photo:'https://images.unsplash.com/photo-1531123897727-8f129e1688ce?auto=format&fit=crop&w=900&q=90',intro:'Alice. Je suis plutôt du genre à dire exactement ce que je pense. Ça peut être charmant… ou dangereux.',tone:'assurée',likes:['vinyles','cuisine','cinéma']},
+    {id:'ines',name:'Inès',age:25,bio:'latine, solaire, tactile et joueuse',tags:['solaire','joueuse','spontanée'],photo:'https://images.unsplash.com/photo-1524504388940-b1c1722653e1?auto=format&fit=crop&w=900&q=90',intro:'Inès. Approche, j’ai envie de savoir qui se cache derrière cet écran.',tone:'solaire',likes:['plage','musique','cuisine']},
+    {id:'clara',name:'Clara',age:26,bio:'discrète, sensuelle, observatrice',tags:['discrète','sensuelle','fine'],photo:'https://images.unsplash.com/photo-1488426862026-3ee34a7d66df?auto=format&fit=crop&w=900&q=90',intro:'Clara. Je parle peu au début… mais je remarque absolument tout.',tone:'sensuelle',likes:['photographie','jazz','cafés']},
+    {id:'zoe',name:'Zoé',age:23,bio:'espiègle, insolente, pleine d’énergie',tags:['espiègle','insolente','énergique'],photo:'https://images.unsplash.com/photo-1496440737103-cd596325d314?auto=format&fit=crop&w=900&q=90',intro:'Zoé. Tu as intérêt à avoir un peu de répartie, sinon je vais m’ennuyer très vite.',tone:'espiègle',likes:['festivals','jeux','mode']},
+    {id:'lea',name:'Léa',age:29,bio:'mature, tendre, mystérieuse',tags:['mature','tendre','mystérieuse'],photo:'https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?auto=format&fit=crop&w=900&q=90',intro:'Léa. J’aime les conversations tardives, celles où on finit par oublier l’heure.',tone:'mature',likes:['livres','voyages','cuisine']},
+    {id:'nina',name:'Nina',age:27,bio:'créative, bohème, romantique',tags:['créative','bohème','romantique'],photo:'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=crop&w=900&q=90',intro:'Nina. J’ai toujours une idée bizarre en tête. Tu veux savoir laquelle ?',tone:'créative',likes:['art','musique','dessin']},
+    {id:'eva',name:'Eva',age:30,bio:'charismatique, calme, provocatrice',tags:['charismatique','calme','provocatrice'],photo:'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=900&q=90',intro:'Eva. J’aime les gens qui assument ce qu’ils veulent. Alors ne tourne pas autour du pot.',tone:'provocatrice',likes:['restaurants','voyages','photographie']}
+  ];
+  if (Array.isArray(girls)) {
+    const ids = new Set(girls.map(g => g.id));
+    extraGirls.forEach(g => { if (!ids.has(g.id)) girls.push(g); });
+    if (typeof render === 'function') render();
+  }
+
   const button = document.createElement('button');
   button.id = 'velvet-ai-button';
   button.textContent = '🧠 IA';
@@ -100,7 +117,7 @@ COHÉRENCE : utilise l’historique, évite les répétitions et ne réutilise p
   window.generatePhoto = async function(prompt='') {
     if (!key()) return openAI('⚠️ Connecte l’IA pour générer une image.');
     const g = currentGirl(); if (!g) return;
-    const p = `Photo réaliste d’un selfie de ${g.name}, femme adulte de ${g.age} ans. ${g.bio}. ${g.likes.join(', ')}. ${prompt}. Apparence naturelle et féminine, cadrage smartphone crédible, lumière naturelle, tenue élégante, séduisante mais non explicite.`;
+    const p = `Photographie hyperréaliste prise au smartphone, selfie spontané de ${g.name}, femme adulte de ${g.age} ans. ${g.bio}. ${g.likes.join(', ')}. ${prompt || 'selfie du moment'}. Visage naturel et cohérent, peau avec texture réaliste et petites imperfections, expression vivante, regard vers l’objectif, cheveux naturels avec quelques mèches irrégulières, lumière ambiante réaliste, exposition imparfaite mais crédible, profondeur de champ légère, cadrage smartphone à bout de bras, perspective et proportions naturelles, arrière-plan quotidien crédible, aucun effet studio, aucun rendu plastique, aucune esthétique CGI, photographie documentaire moderne, tenue élégante et séduisante mais non explicite.`;
     addTyping();
     try {
       const r = await fetch('https://gen.pollinations.ai/v1/images/generations',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:'flux',prompt:p,n:1,size:'1024x1024'})});
