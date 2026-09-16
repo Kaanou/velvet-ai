@@ -1,0 +1,54 @@
+name: Velvet AI — amélioration automatique
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  upgrade:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Améliorer l'interface mobile et les interactions
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('index.html'); s=p.read_text(encoding='utf-8')
+          if 'VELVET_UPGRADE_V2' not in s:
+              addon=r'''
+<!-- VELVET_UPGRADE_V2 -->
+<style>
+.voiceBtn{width:50px;height:50px;flex:0 0 50px;border:1px solid #302b2d;border-radius:16px;background:#121112;color:#ddd;font-size:18px}.voiceBtn.live{background:#ef4444;border-color:#ef4444;color:#fff}.composer{padding-left:0;padding-right:0}.composer input{min-width:0}.messages{padding-bottom:30px}.voiceHint{position:fixed;z-index:70;left:50%;bottom:calc(90px + env(safe-area-inset-bottom));transform:translateX(-50%);background:#181617;color:#eee;border:1px solid #302b2d;border-radius:99px;padding:9px 13px;font-size:11px;display:none;box-shadow:0 10px 40px #000}
+@media(max-width:560px){.voiceBtn{width:46px;height:50px;flex-basis:46px}.composer{gap:5px}.composer input{padding:0 13px}.send{min-width:70px}}
+</style>
+<div class="voiceHint" id="voiceHint">Je t’écoute…</div>
+<script>
+(function(){
+ const input=document.getElementById('input'),sendBtn=document.getElementById('sendBtn'),composer=sendBtn&&sendBtn.parentElement;
+ if(!input||!composer)return;
+ if(!document.getElementById('voiceBtn')){const b=document.createElement('button');b.id='voiceBtn';b.className='voiceBtn';b.type='button';b.textContent='🎙️';b.title='Parler';b.setAttribute('aria-label','Parler');composer.insertBefore(b,sendBtn);
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){b.style.opacity='.45';b.title='Dictée non disponible dans ce navigateur';}
+  else{const r=new SR();r.lang='fr-FR';r.interimResults=true;r.continuous=false;r.onstart=()=>{b.classList.add('live');document.getElementById('voiceHint').style.display='block'};r.onend=()=>{b.classList.remove('live');document.getElementById('voiceHint').style.display='none'};r.onerror=()=>{b.classList.remove('live');document.getElementById('voiceHint').style.display='none'};r.onresult=e=>{let text='';for(let i=e.resultIndex;i<e.results.length;i++)text+=e.results[i][0].transcript;if(text)input.value=text;if(e.results[e.results.length-1].isFinal)setTimeout(()=>{if(input.value.trim())sendBtn.click()},180)};b.onclick=()=>{try{r.start()}catch(e){}};}
+ }
+ const root=document.documentElement;const sync=()=>{if(!window.visualViewport)return;const vv=visualViewport;const keyboard=Math.max(0,window.innerHeight-vv.height-vv.offsetTop);root.style.setProperty('--kb',Math.min(keyboard,380)+'px');setTimeout(()=>{const m=document.getElementById('messages');if(m)m.scrollTop=m.scrollHeight},25)};if(window.visualViewport){visualViewport.addEventListener('resize',sync);visualViewport.addEventListener('scroll',sync)}window.addEventListener('orientationchange',()=>setTimeout(sync,300));sync();
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendBtn.click()}});
+ const ip=document.getElementById('imagePrompt');if(ip)ip.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();const b=document.getElementById('genBtn');if(b)b.click()}});
+ document.addEventListener('keydown',e=>{if(e.key==='Escape'){const m=document.getElementById('menu');if(m)m.style.display='none';const modal=document.getElementById('modal');if(modal)modal.style.display='none';const profile=document.getElementById('profile');if(profile)profile.style.display='none'}});
+})();
+</script>
+'''
+              s=s.replace('</body>',addon+'</body>')
+              p.write_text(s,encoding='utf-8')
+          Path('manifest.webmanifest').write_text('{"name":"Velvet AI","short_name":"Velvet AI","start_url":"./","display":"standalone","background_color":"#080808","theme_color":"#080808","lang":"fr","icons":[]}',encoding='utf-8')
+          s=p.read_text(encoding='utf-8')
+          if '<link rel="manifest"' not in s:
+              p.write_text(s.replace('</head>','<link rel="manifest" href="manifest.webmanifest"></head>'),encoding='utf-8')
+      - name: Publier les améliorations
+        run: |
+          git config user.name "Velvet AI Bot"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html manifest.webmanifest
+          git diff --cached --quiet || git commit -m "Upgrade Velvet AI mobile UX"
+          git push
