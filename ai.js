@@ -48,11 +48,9 @@
   box.querySelector('#delk').onclick = () => { sessionStorage.removeItem(KEY); status('IA déconnectée.'); };
   box.querySelector('#testk').onclick = async () => { const v = vk.value.trim() || key(); if (!v) return status('Aucune clé à tester.'); status('Test…'); try { const r = await request(v, [{role:'user',content:'Réponds uniquement OK.'}], 12); if (!r) throw Error('Réponse vide du modèle.'); status('✓ IA opérationnelle.'); } catch(e) { status('✕ '+e.message); } };
 
-  // ===== MENU INTENSITÉ =====
   function injectIntensityMenu() {
     const settings = document.getElementById('settings');
     if (!settings || document.getElementById('intensity-menu')) return;
-
     const div = document.createElement('div');
     div.id = 'intensity-menu';
     div.style.cssText = 'margin:10px 0 6px;padding-top:8px;border-top:1px solid #302b2d';
@@ -66,7 +64,6 @@
       <div id="intensity-status" style="font-size:10px;color:#777;margin-top:6px"></div>
     `;
     settings.insertBefore(div, settings.firstChild);
-
     const updateStatus = () => {
       const lvl = getIntensity();
       const label = { soft: 'Soft', sensuel: 'Sensuel', hardcore: 'Hardcore 🔥' }[lvl] || lvl;
@@ -76,7 +73,6 @@
         btn.style.background = btn.dataset.level === lvl ? '#2a1515' : '#1b191a';
       });
     };
-
     div.querySelectorAll('button[data-level]').forEach(btn => {
       btn.onclick = () => { setIntensity(btn.dataset.level); updateStatus(); };
     });
@@ -166,7 +162,6 @@ PHOTO / VIDÉO : si on te demande une photo ou une vidéo, laisse le générateu
       return `${base} Tenue très révélatrice ou légèrement déshabillée, décolleté profond, expression sensuelle, regard coquin, peau réaliste, lumière douce, cadrage intime, photorealistic, suggestif. ${userPrompt || 'selfie sensuel'}`;
     }
 
-    // HARDCORE — base nude, actes seulement si demandés
     let acts = '';
     if (/doigt|masturb|caress|touche|joui/.test(up)) acts += ', se doigte la chatte, doigts dans le sexe, expression de plaisir';
     if (/suc(e|er)|pipe|bouche|gorges?/.test(up)) acts += ', suce une grosse queue, bouche pleine, regard caméra';
@@ -191,20 +186,31 @@ ${userPrompt || 'selfie nu explicite'}`;
     const g = currentGirl(); if (!g) return;
     const intensity = getIntensity();
     const p = buildPhotoPrompt(g, prompt, intensity);
+    const seed = Math.floor(Math.random() * 999999);
 
     addTyping();
     try {
-      const r = await fetch('https://gen.pollinations.ai/v1/images/generations',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:IMAGE_MODEL,prompt:p,n:1,size:'1024x1024'})});
-      const raw = await r.text(); let data;
-      try { data = JSON.parse(raw); } catch { throw Error('Réponse image invalide.'); }
-      if (!r.ok) throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
-      const src = data?.data?.[0]?.url;
+      // Endpoint simple + fiable (GET)
+      const url = `https://image.pollinations.ai/prompt/${encodeURIComponent(p)}?model=${IMAGE_MODEL}&width=768&height=1024&seed=${seed}&nologo=true&safe=false`;
+      const r = await fetch(url, { headers: { Authorization: 'Bearer ' + key() } });
+      if (!r.ok) {
+        const errText = await r.text().catch(() => '');
+        throw Error('HTTP ' + r.status + (errText ? ' — ' + errText.slice(0, 120) : ''));
+      }
+      const blob = await r.blob();
+      if (!blob || blob.size < 1000) throw Error('Image vide ou trop petite');
+      const src = URL.createObjectURL(blob);
       removeTyping();
-      if (!src) throw Error('Aucune image reçue.');
-      history[g.id]=history[g.id]||[];
-      history[g.id].push({role:'ai',text:'📷',image:src});
+      history[g.id] = history[g.id] || [];
+      history[g.id].push({ role: 'ai', text: '📷', image: src });
       save(); renderMessages();
-    } catch(e) { removeTyping(); console.error(e); history[g.id]=history[g.id]||[]; history[g.id].push({role:'ai',text:'Je n’arrive pas à générer la photo pour le moment.'}); save(); renderMessages(); }
+    } catch (e) {
+      removeTyping();
+      console.error(e);
+      history[g.id] = history[g.id] || [];
+      history[g.id].push({ role: 'ai', text: 'Erreur photo : ' + (e.message || 'inconnu') });
+      save(); renderMessages();
+    }
   };
 
   window.generateVideo = async function(prompt='') {
@@ -221,14 +227,14 @@ ${userPrompt || 'selfie nu explicite'}`;
       const blob = await r.blob();
       const src = URL.createObjectURL(blob);
       removeTyping();
-      history[g.id]=history[g.id]||[];
-      history[g.id].push({role:'ai',text:'🎥',video:src});
+      history[g.id] = history[g.id] || [];
+      history[g.id].push({ role: 'ai', text: '🎥', video: src });
       save(); renderMessages();
-    } catch(e) {
+    } catch (e) {
       removeTyping();
       console.error(e);
-      history[g.id]=history[g.id]||[];
-      history[g.id].push({role:'ai',text:'Je n’arrive pas à générer la vidéo pour le moment (les vidéos hardcore sont parfois filtrées).'});
+      history[g.id] = history[g.id] || [];
+      history[g.id].push({ role: 'ai', text: 'Erreur vidéo : ' + (e.message || 'filtré ou indisponible') });
       save(); renderMessages();
     }
   };
