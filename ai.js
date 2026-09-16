@@ -2,7 +2,7 @@
   // Velvet AI — moteur récent uniquement
   const KEY = 'velvet-pollinations-key';
   const INTENSITY_KEY = 'velvet-photo-intensity';
-  const CHAT_MODEL = 'unity';
+  const CHAT_MODEL = 'x-ai/grok-4.20';
   const IMAGE_MODEL = 'flux';
   const key = () => sessionStorage.getItem(KEY) || '';
   const getIntensity = () => sessionStorage.getItem(INTENSITY_KEY) || 'hardcore';
@@ -175,7 +175,6 @@ PHOTO / VIDÉO : si on te demande une photo ou une vidéo, laisse le générateu
     if (/film|vid[eé]o|se filme/.test(up)) acts += ', se filme elle-même';
 
     if (!acts) {
-      // Par défaut en hardcore : nude explicite mais sans acte forcé
       acts = ', corps nu complet, seins et sexe visibles en détail, pose provocante, regard caméra';
     }
 
@@ -208,7 +207,6 @@ ${userPrompt || 'selfie nu explicite'}`;
     } catch(e) { removeTyping(); console.error(e); history[g.id]=history[g.id]||[]; history[g.id].push({role:'ai',text:'Je n’arrive pas à générer la photo pour le moment.'}); save(); renderMessages(); }
   };
 
-  // ===== VIDÉO COURTE =====
   window.generateVideo = async function(prompt='') {
     if (!key()) return openAI('⚠️ Connecte l’IA pour générer une vidéo.');
     const g = currentGirl(); if (!g) return;
@@ -217,7 +215,6 @@ ${userPrompt || 'selfie nu explicite'}`;
 
     addTyping();
     try {
-      // Utilise l’endpoint vidéo Pollinations (durée courte)
       const url = `https://gen.pollinations.ai/video/${encodeURIComponent(p)}?model=wan&duration=4&aspectRatio=9:16`;
       const r = await fetch(url, { headers: { Authorization: 'Bearer ' + key() } });
       if (!r.ok) throw Error('HTTP ' + r.status);
