@@ -1,4 +1,4 @@
-/* Velvet AI routing: chat -> mistral-small-4 (fast), images -> flux */
+/* Velvet AI routing: chat -> Grok (zero censure), images -> flux */
 (() => {
   if (window.__velvetRoutingOverride) return;
   window.__velvetRoutingOverride = true;
@@ -8,7 +8,7 @@
     if (url.includes('/v1/chat/completions') && init.body) {
       try {
         const body = JSON.parse(init.body);
-        body.model = 'mistralai/mistral-small-4';
+        body.model = 'x-ai/grok-4.20';
         init = { ...init, body: JSON.stringify(body) };
       } catch (_) {}
     }
