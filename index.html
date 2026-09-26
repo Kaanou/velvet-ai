@@ -26,33 +26,33 @@
 .chips span{display:inline-block;padding:4px 7px;border-radius:99px;background:#fff1;border:1px solid #fff2;font-size:10px;margin:2px}
 .enter{width:100%;margin-top:8px;border:0;border-radius:12px;padding:11px;background:#f0eeee;color:#111;font-weight:800}
 .notice{text-align:center;color:#666;font-size:11px;margin:16px auto}
-.chat{display:none;max-width:850px;margin:auto;height:calc(100dvh - 32px);position:relative}
+.chat{display:none;max-width:850px;margin:auto;height:100dvh;min-height:0;position:relative;padding-top:env(safe-area-inset-top)}
 .chathead{height:58px;display:flex;align-items:center;gap:10px}
 .back,.more{border:1px solid #292426;background:#121112;color:#ddd;border-radius:12px;padding:9px 12px}
 .mini{width:42px;height:42px;border-radius:50%;background-size:cover;background-position:center top;flex:0 0 auto}
 .chatname{font-weight:800}.online{font-size:10px;color:#777}
-.messages{position:absolute;left:0;right:0;top:58px;bottom:124px;overflow-y:auto;padding:8px 2px 28px}
+.messages{position:absolute;left:0;right:0;top:calc(58px + env(safe-area-inset-top));bottom:calc(126px + env(safe-area-inset-bottom));overflow-y:auto;padding:8px 2px 32px;-webkit-overflow-scrolling:touch}
 .row{display:flex;margin:10px 0}.row.me{justify-content:flex-end}
 .bubble{max-width:min(78%,570px);padding:12px 15px;border-radius:18px;background:#171516;border:1px solid #252123;line-height:1.48;font-size:15px;white-space:pre-wrap}
 .row.me .bubble{background:#ef4444;border-color:#ef4444;color:white}
 .typing{display:flex;gap:4px;padding:14px 16px}.dot{width:5px;height:5px;border-radius:50%;background:#777;animation:d 1s infinite}@keyframes d{50%{opacity:.2}}
-.composer{position:fixed;z-index:50;left:50%;transform:translateX(-50%);width:min(850px,calc(100% - 24px));bottom:8px;padding:8px 0;background:linear-gradient(transparent,#080808 22%);display:flex;gap:7px}
+.composer{position:fixed;z-index:50;left:50%;transform:translateX(-50%);width:min(850px,calc(100% - 20px));bottom:calc(8px + env(safe-area-inset-bottom));padding:8px 0;background:linear-gradient(transparent,#080808 22%);display:flex;gap:7px}
 .composer input{height:52px;flex:1;border:1px solid #302b2d;background:#121112;color:#fff;border-radius:16px;padding:0 15px;font-size:16px}
 .send{height:52px;border:0;background:#ef4444;color:white;border-radius:16px;padding:0 17px;font-weight:800}
-.tools{position:fixed;z-index:49;left:50%;transform:translateX(-50%);bottom:68px;width:min(850px,calc(100% - 24px));display:flex;gap:7px;overflow-x:auto}
+.tools{position:fixed;z-index:49;left:50%;transform:translateX(-50%);bottom:calc(68px + env(safe-area-inset-bottom));width:min(850px,calc(100% - 20px));display:flex;gap:7px;overflow-x:auto}
 .tool{flex:0 0 auto;border:1px solid #292426;background:#121112;color:#aaa;border-radius:99px;padding:8px 11px;font-size:11px}
 .photoResult,.videoResult{max-width:100%;max-height:55vh;border-radius:16px;display:block;margin-top:3px}
 .photoCaption{font-size:11px;color:#777;margin-top:7px}
-.settings{display:none;position:absolute;z-index:60;right:0;top:55px;background:#141214;border:1px solid #292426;border-radius:15px;padding:12px;width:min(280px,90vw);max-height:75vh;overflow-y:auto}
+.settings{display:none;position:fixed;z-index:10001;right:10px;top:calc(60px + env(safe-area-inset-top));background:#141214;border:1px solid #292426;border-radius:15px;padding:12px;width:min(280px,90vw);max-height:75vh;overflow-y:auto}
 .settings button{display:block;width:100%;margin:5px 0;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:9px;font-size:12px}
-.galleryModal{display:none;position:fixed;z-index:20000;inset:0;background:#050505ee;padding:20px;overflow:auto}.galleryBox{max-width:900px;margin:auto;background:#111;border:1px solid #292426;border-radius:22px;padding:14px}.galleryHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.galleryGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.galleryGrid img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px;background:#181617}.galleryClose{border:1px solid #333;background:#191718;color:#fff;border-radius:12px;padding:8px 12px}.footer{text-align:center;color:#555;font-size:10px;margin-top:20px}
+.galleryModal{display:none;position:fixed;z-index:20000;inset:0;background:#050505ee;padding:calc(12px + env(safe-area-inset-top)) 12px calc(12px + env(safe-area-inset-bottom));overflow:auto}.galleryBox{max-width:900px;margin:auto;background:#111;border:1px solid #292426;border-radius:22px;padding:14px}.galleryHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.galleryGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.galleryGrid img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px;background:#181617}.galleryClose{border:1px solid #333;background:#191718;color:#fff;border-radius:12px;padding:8px 12px}.footer{text-align:center;color:#555;font-size:10px;margin-top:20px}
 @media(max-width:760px){.grid{grid-template-columns:1fr 1fr}.card{height:320px}}
 @media(max-width:500px){.grid{grid-template-columns:1fr}.card{height:380px}.chat{height:100dvh}.composer{width:calc(100% - 20px)}.tools{width:calc(100% - 20px)}}
 </style>
 </head>
 <body>
 <div class="wrap">
-<header class="nav"><div class="brand"><div class="brandmark">V</div><span>Velvet AI</span></div><div class="status">● 30 compagnes · 18+</div></header>
+<header class="nav"><div class="brand"><div class="brandmark">V</div><span>Velvet AI</span></div><div class="status">● 48 compagnes · 18+</div></header>
 <section id="home">
 <div class="hero"><div class="eyebrow">Compagnes virtuelles · 18+</div><h1>Une présence.<br>Une personnalité.</h1><p>48 compagnes majeures. Chat, galeries photo et vidéos.</p></div>
 <div class="sectionhead"><h2>Qui veux-tu rencontrer ?</h2><span id="count">48 profils</span></div>
@@ -135,5 +135,5 @@ function generatePhoto(){ if(window.generatePhoto) window.generatePhoto(); else 
 function generateVideo(){ if(window.generateVideo) window.generateVideo(); else alert('Connecte l’IA d’abord'); }
 render();
 </script>
-<script src="./ai.js?v=9"></script><script src="./ai.js"></script><script src="./model-routing-override.js"></script></body>
+<script src="./ai.js?v=10"></script></body>
 </html>
