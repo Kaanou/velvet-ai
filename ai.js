@@ -5,7 +5,7 @@
   const DEFAULTS = { intensity:'hardcore', chatModel:'x-ai/grok-4.20', imageModel:'zimage', imageSize:'768x1024', forceNude:'1', creativity:'0.95' };
   const get = k => sessionStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => sessionStorage.setItem(CFG[k], v);
-  const key = () => sessionStorage.getItem(KEY) || '';
+  const key = () => localStorage.getItem(KEY) || '';
   const getIntensity = () => get('intensity');
   const currentGirl = () => (typeof current !== 'undefined' && current !== null) ? girls[current] : null;
   const $ = id => document.getElementById(id);
@@ -36,15 +36,15 @@
 
   const box = document.createElement('div');
   box.style.cssText = 'display:none;position:fixed;z-index:10002;inset:0;background:#000b;align-items:flex-end;justify-content:center;padding:12px';
-  box.innerHTML = '<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l\'IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Clé Pollinations (session).</p><input id="vk" type="password" placeholder="Clé API…" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>';
+  box.innerHTML = '<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l\'IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Clé Pollinations — mémorisée sur cet appareil.</p><input id="vk" type="password" placeholder="Clé API…" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>';
   document.body.appendChild(box);
   const vk = box.querySelector('#vk'), ks = box.querySelector('#ks');
   const status = m => ks.textContent = m || (key() ? '✓ Connectée.' : 'Non connectée.');
   const openAI = m => { box.style.display = 'flex'; status(m); setTimeout(() => vk.focus(), 50); };
   btn.onclick = () => openAI();
   box.querySelector('#vx').onclick = () => box.style.display = 'none';
-  box.querySelector('#savek').onclick = () => { const v = vk.value.trim(); if (!v) return status('Colle une clé.'); sessionStorage.setItem(KEY, v); status('✓ OK'); box.style.display = 'none'; };
-  box.querySelector('#delk').onclick = () => { sessionStorage.removeItem(KEY); status('Déconnectée.'); };
+  box.querySelector('#savek').onclick = () => { const v = vk.value.trim(); if (!v) return status('Colle une clé.'); localStorage.setItem(KEY, v); status('✓ OK'); box.style.display = 'none'; };
+  box.querySelector('#delk').onclick = () => { localStorage.removeItem(KEY); status('Déconnectée.'); };
   box.querySelector('#testk').onclick = async () => { const v = vk.value.trim() || key(); if (!v) return status('Aucune clé.'); status('Test…'); try { const r = await request(v, [{role:'user',content:'OK'}], 8); status(r ? '✓ OK' : '✕'); } catch(e) { status('✕ '+e.message); } };
 
   function injectMenu() {
