@@ -32,19 +32,19 @@
 
   const btn = document.createElement('button');
   btn.textContent = '🧠 IA';
-  btn.style.cssText = 'border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:9px 11px;font-weight:800;font-size:12px;margin-left:auto;flex:0 0 auto';
-  const head = document.querySelector('.chathead');
-  const more = document.querySelector('.more');
-  if (head) head.insertBefore(btn, more || null);
+  btn.id='velvet-ai-button'; btn.setAttribute('aria-label','Connecter l IA'); btn.style.cssText = 'border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:9px 11px;font-weight:800;font-size:12px;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:58px';
+  const nav = document.querySelector('.nav'); const head = document.querySelector('.chathead'); const more = document.querySelector('.more');
+  if (nav) { const holder=document.createElement('div'); holder.style.cssText='margin-left:auto;display:flex;align-items:center'; holder.appendChild(btn); nav.appendChild(holder); }
+  else if (head) head.insertBefore(btn, more || null);
 
   const box = document.createElement('div');
   box.style.cssText = 'display:none;position:fixed;z-index:10002;inset:0;background:#000b;align-items:flex-end;justify-content:center;padding:12px';
-  box.innerHTML = '<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l\'IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Clé Pollinations — mémorisée sur cet appareil.</p><input id="vk" type="password" placeholder="Clé API…" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>';
+  box.innerHTML = '<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l\'IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Clé API Pollinations — mémorisée uniquement sur cet appareil.</p><input id="vk" type="password" placeholder="Clé API…" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>';
   document.body.appendChild(box);
   const vk = box.querySelector('#vk'), ks = box.querySelector('#ks');
-  const status = m => ks.textContent = m || (key() ? '✓ Connectée.' : 'Non connectée.');
+  const status = m => { ks.textContent = m || (key() ? '✓ Connectée.' : 'Non connectée.'); btn.textContent=key()?'🧠 IA ✓':'🧠 IA'; btn.style.borderColor=key()?'#ef4444':'#302b2d'; };
   const openAI = m => { box.style.display = 'flex'; status(m); setTimeout(() => vk.focus(), 50); };
-  btn.onclick = () => openAI();
+  btn.onclick = () => openAI(); status();
   box.querySelector('#vx').onclick = () => box.style.display = 'none';
   box.querySelector('#savek').onclick = () => { const v = vk.value.trim(); if (!v) return status('Colle une clé.'); localStorage.setItem(KEY, v); status('✓ OK'); box.style.display = 'none'; };
   box.querySelector('#delk').onclick = () => { localStorage.removeItem(KEY); status('Déconnectée.'); };
@@ -190,6 +190,3 @@
     }
   };
 })();
-
-/* VELVET_GALLERY_UI_LOADER */
-(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();
