@@ -45,7 +45,7 @@
 .photoCaption{font-size:11px;color:#777;margin-top:7px}
 .settings{display:none;position:absolute;z-index:60;right:0;top:55px;background:#141214;border:1px solid #292426;border-radius:15px;padding:12px;width:min(280px,90vw);max-height:75vh;overflow-y:auto}
 .settings button{display:block;width:100%;margin:5px 0;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:9px;font-size:12px}
-.footer{text-align:center;color:#555;font-size:10px;margin-top:20px}
+.galleryModal{display:none;position:fixed;z-index:20000;inset:0;background:#050505ee;padding:20px;overflow:auto}.galleryBox{max-width:900px;margin:auto;background:#111;border:1px solid #292426;border-radius:22px;padding:14px}.galleryHead{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}.galleryGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.galleryGrid img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px;background:#181617}.galleryClose{border:1px solid #333;background:#191718;color:#fff;border-radius:12px;padding:8px 12px}.footer{text-align:center;color:#555;font-size:10px;margin-top:20px}
 @media(max-width:760px){.grid{grid-template-columns:1fr 1fr}.card{height:320px}}
 @media(max-width:500px){.grid{grid-template-columns:1fr}.card{height:380px}.chat{height:100dvh}.composer{width:calc(100% - 20px)}.tools{width:calc(100% - 20px)}}
 </style>
@@ -64,7 +64,7 @@
 <button class="back" onclick="goHome()">←</button>
 <div class="mini" id="mini"></div>
 <div><div class="chatname" id="chatname"></div><div class="online">● disponible</div></div>
-<button class="more" style="margin-left:auto" onclick="toggleSettings()">•••</button>
+<button class="galleryBtn" onclick="openGallery()">📸</button><button class="more" style="margin-left:auto" onclick="toggleSettings()">•••</button>
 </div>
 <div class="settings" id="settings">
 <button onclick="generatePhoto()">📷 Photo</button>
@@ -73,7 +73,7 @@
 <button onclick="goHome()">Changer de compagne</button>
 </div>
 <div class="messages" id="messages"></div>
-<div class="tools">
+<div class="galleryModal" id="galleryModal" onclick="if(event.target===this)closeGallery()"><div class="galleryBox"><div class="galleryHead"><b id="galleryTitle">Photos</b><button class="galleryClose" onclick="closeGallery()">Fermer</button></div><div class="galleryGrid" id="galleryGrid"></div></div></div><div class="tools">
 <button class="tool" onclick="quick('Comment tu vas ?')">Comment tu vas ?</button>
 <button class="tool" onclick="quick('Raconte-moi ta journée')">Ta journée ?</button>
 <button class="tool" onclick="generatePhoto()">📷 Photo</button>
@@ -93,7 +93,7 @@ function save(){try{localStorage.setItem('velvet-history',JSON.stringify(history
 function esc(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&','<':'<','>':'>',"'":'&#39;','"':'"'}[c]))}
 function render(){
   const root=$('girls'); if(!root)return;
-  if($('count')) $('count').textContent=girls.length+' profils';
+  if($('count')) $('count').textContent=girls.length+' profils'; if(document.querySelector('.status')) document.querySelector('.status').textContent='● '+girls.length+' compagnes · 18+';
   root.innerHTML=girls.map((g,i)=>`<article class="card"><div class="photo" style="background-image:url('${g.photo}')"></div><div class="info"><div class="name">${esc(g.name)}<span class="age">${g.age} ans</span></div><div class="bio">${esc(g.bio)}</div><div class="chips">${(g.tags||[]).map(x=>`<span>${esc(x)}</span>`).join('')}</div><button class="enter" onclick="openGirl(${i})">Faire connaissance</button></div></article>`).join('');
 }
 function openGirl(i){
@@ -128,11 +128,13 @@ function send(){
   setTimeout(()=>{removeTyping(); history[g.id].push({role:'ai',text:'Connecte l’IA (bouton 🧠) pour discuter.'}); save(); renderMessages()},400);
 }
 $('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); send()}});
+function galleryUrls(i){const base=(i*6)%100;return Array.from({length:6},(_,j)=>'https://randomuser.me/api/portraits/women/'+(((base+j)%100)+1)+'.jpg')} 
+function openGallery(){if(current===null)return;const g=girls[current];$('galleryTitle').textContent=g.name+' · 6 photos';$('galleryGrid').innerHTML=galleryUrls(current).map((u,i)=>'<img src="'+u+'" alt="'+esc(g.name)+' photo '+(i+1)+'" loading="lazy">').join('');$('galleryModal').style.display='block'}
+function closeGallery(){$('galleryModal').style.display='none'}
 function goHome(){$('chat').style.display='none'; $('home').style.display='block'; $('settings').style.display='none'; current=null}
 function generatePhoto(){ if(window.generatePhoto) window.generatePhoto(); else alert('Connecte l’IA d’abord'); }
 function generateVideo(){ if(window.generateVideo) window.generateVideo(); else alert('Connecte l’IA d’abord'); }
 render();
 </script>
-<script src="./ai.js?v=8"></script>
-<script src="./model-routing-override.js"></script><script src="./ai.js"></script></body>
+<script src="./ai.js?v=9"></script></body>
 </html>
