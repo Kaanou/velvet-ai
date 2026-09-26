@@ -2,7 +2,7 @@
   const KEY = 'velvet-pollinations-key';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
-  const DEFAULTS = { intensity:'hardcore', chatModel:'x-ai/grok-4.20', imageModel:'zimage', imageSize:'768x1024', forceNude:'1', creativity:'0.95' };
+  const DEFAULTS = { intensity:'hardcore', chatModel:'openai', imageModel:'flux', imageSize:'768x1024', forceNude:'1', creativity:'0.9' };
   const get = k => sessionStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => sessionStorage.setItem(CFG[k], v);
   const key = () => localStorage.getItem(KEY) || '';
