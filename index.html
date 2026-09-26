@@ -128,8 +128,7 @@ function send(){
   setTimeout(()=>{removeTyping(); history[g.id].push({role:'ai',text:'Connecte l’IA (bouton 🧠) pour discuter.'}); save(); renderMessages()},400);
 }
 $('input').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault(); send()}});
-function galleryUrls(i){const base=(i*6)%100;return Array.from({length:6},(_,j)=>'https://randomuser.me/api/portraits/women/'+(((base+j)%100)+1)+'.jpg')} 
-function openGallery(){if(current===null)return;const g=girls[current];$('galleryTitle').textContent=g.name+' · 6 photos';$('galleryGrid').innerHTML=galleryUrls(current).map((u,i)=>'<img src="'+u+'" alt="'+esc(g.name)+' photo '+(i+1)+'" loading="lazy">').join('');$('galleryModal').style.display='block'}
+function openGallery(){if(current===null)return;const g=girls[current];$('galleryTitle').textContent=g.name+' · galerie';$('galleryGrid').innerHTML='<div style="color:#aaa;padding:20px">Préparation…</div>';$('galleryModal').style.display='block';if(window.generateGallery) window.generateGallery();else $('galleryGrid').innerHTML='<div style="color:#aaa;padding:20px">IA non connectée.</div>'}
 function closeGallery(){$('galleryModal').style.display='none'}
 function goHome(){$('chat').style.display='none'; $('home').style.display='block'; $('settings').style.display='none'; current=null}
 function generatePhoto(){ if(window.generatePhoto) window.generatePhoto(); else alert('Connecte l’IA d’abord'); }
