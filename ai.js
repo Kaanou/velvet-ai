@@ -2,7 +2,7 @@
   const KEY = 'velvet-pollinations-key';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
-  const DEFAULTS = { intensity:'sensuel', chatModel:'openai-fast', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'wan-fast' };
+  const DEFAULTS = { intensity:'sensuel', chatModel:'openai-fast', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
   const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => localStorage.setItem(CFG[k], v);
   const key = () => localStorage.getItem(KEY) || '';
@@ -23,7 +23,7 @@
     {id:'gptimage',label:'GPT Image · haute fidélité'},
     {id:'klein',label:'Flux Klein · rapide'}
   ];
-  const VIDEO_MODELS = [{id:'wan-fast',label:'Wan Fast · vidéo'},{id:'wan',label:'Wan · qualité'},{id:'veo',label:'Veo · qualité'}];
+  const VIDEO_MODELS = [{id:'wan-fast',label:'Wan Fast · vidéo · Pollinations'},{id:'wan',label:'Wan · qualité · Pollinations'} ,{id:'freeai-wan-i2v',label:'Free.ai · Wan I2V · quota gratuit'}];
   const SIZES = [
     {id:'512x768',label:'Petit (rapide)'},
     {id:'768x1024',label:'Standard'},
@@ -172,9 +172,13 @@
     const p = buildPhotoPrompt(g, prompt, getIntensity())+', short video, natural body motion, photorealistic';
     addTyping();
     try {
-      const model = get('videoModel') || 'wan-fast';
+      const selected = get('videoModel') || 'wan-fast';
+      if(selected==='freeai-wan-i2v'){
+        throw Error('Free.ai nécessite une clé gratuite dédiée : configure-la côté serveur avant activation.');
+      }
+      const model = selected;
       const url = 'https://gen.pollinations.ai/video/'+encodeURIComponent(p)+'?model='+encodeURIComponent(model)+'&duration=4&aspectRatio=9:16&image%5B0%5D='+encodeURIComponent(g.photo);
-      const r = await fetch(url, { headers: { Authorization: 'Bearer '+key() } });
+      const r = await fetch(url,{headers:{Authorization:'Bearer '+key()}});
       if (!r.ok) { const raw=await r.text().catch(()=>''); if(r.status===402) throw Error('HTTP 402 — solde/budget Pollen insuffisant pour la vidéo'); if(r.status===400) throw Error('HTTP 400 — modèle vidéo ou paramètres refusés'); throw Error('HTTP '+r.status+(raw?' — '+raw.slice(0,100):'')); }
       const blob = await r.blob();
       const src = URL.createObjectURL(blob);
