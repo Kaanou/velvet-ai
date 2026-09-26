@@ -110,27 +110,28 @@
   const SKIN=['fair skin','light olive','tanned','medium brown','pale freckled','golden','warm beige'];
   const EYES=['blue eyes','green eyes','brown eyes','hazel eyes','dark brown eyes','grey-blue eyes'];
   const pick = a => a[Math.floor(Math.random()*a.length)];
-  function randomLook(){ return [pick(HAIR),pick(FACE),pick(BODY),pick(SKIN),pick(EYES)].join(', '); }
+  function hashId(id){let h=0;for(let i=0;i<String(id).length;i++)h=((h<<5)-h)+String(id).charCodeAt(i)|0;return Math.abs(h)}
+  function stablePick(a,n){return a[n%a.length]}
+  function identityLook(g){const n=hashId(g.id);return [stablePick(HAIR,n),stablePick(FACE,n+1),stablePick(BODY,n+2),stablePick(SKIN,n+3),stablePick(EYES,n+4)].join(', ');}
 
   const REALISM = 'photorealistic, ultra realistic skin texture pores freckles, shot on iPhone 15 Pro Max, candid phone selfie, natural window light, mild film grain, no plastic skin, no AI look, real human woman';
   const FULL = 'detailed face lips tongue, heavy natural breasts hard nipples, soft belly, full thighs long legs, bare feet when visible, fingers with nails, wet pussy detailed labia clitoris, round ass, visible anus';
 
   function buildPhotoPrompt(g, userPrompt, intensity) {
-    const look = randomLook();
+    const look = identityLook(g);
     const base = 'Photorealistic smartphone photo of the same fictional adult woman '+g.name+', age '+g.age+', consistent facial identity, '+look+'. '+REALISM+'. Natural anatomy, realistic hands, realistic eyes, realistic hair strands, authentic camera imperfections, no plastic skin, no CGI, no illustration.';
     const up = (userPrompt||'').toLowerCase();
-    const force = false;
     let focus = '';
     if (/pied|pieds|orteils/.test(up)) focus += ', bare feet soles toes in focus';
     if (/cuisse|jambes?/.test(up)) focus += ', full thighs legs in frame';
     if (/langue|l[eè]vres|bouche/.test(up)) focus += ', open mouth tongue out detailed lips';
-    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', breasts nipples close-up';
-    if (/chatte|sexe|vagin|clito/.test(up)) focus += ', extreme close-up wet pussy spread labia clitoris';
-    if (/cul|fesse|anus|trou/.test(up)) focus += ', ass cheeks spread anus hole clearly visible';
-    if (/doigt|main/.test(up)) focus += ', detailed fingers on body';
-    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', sexy lace lingerie pulled aside';
-    if (intensity==='soft' && !force) return base+' Casual clothes, natural face, bedroom. '+(userPrompt||'selfie');
-    if (intensity==='sensuel' && !force) return base+' Sexy lingerie, deep cleavage, thighs, flirty bedroom. '+focus+' '+(userPrompt||'lingerie');
+    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', elegant neckline, natural portrait framing';
+    if (/chatte|sexe|vagin|clito/.test(up)) focus += ', close portrait framing, intimate but fully clothed';
+    if (/cul|fesse|anus|trou/.test(up)) focus += ', over-the-shoulder pose, tasteful fitted outfit';
+    if (/doigt|main/.test(up)) focus += ', realistic hands and fingers visible';
+    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', tasteful lace lingerie, fully covered intimate areas';
+    if (intensity==='soft') return base+' Casual clothes, natural face, relaxed bedroom or café. '+focus+' '+(userPrompt||'selfie');
+    if (intensity==='sensuel') return base+' Elegant lingerie or tasteful fitted outfit, confident pose, soft eye contact, intimate bedroom lighting. '+focus+' '+(userPrompt||'selfie');
     let acts = '';
     if (intensity==='soft') acts = ', casual outfit, relaxed expression, natural bedroom or café';
     else if (intensity==='sensuel') acts = ', elegant lingerie or tasteful fitted outfit, confident pose, soft eye contact, intimate bedroom lighting';
@@ -138,6 +139,26 @@
     return base+' '+acts+'. '+focus+' '+(userPrompt||'realistic selfie')+'. Non-explicit, no nudity, no explicit sexual acts.'; 
   }
 
+
+  window.generateGallery = async function(){
+    if (!key()) return openAI('⚠️ Connecte l\'IA.');
+    const g=currentGirl(); if(!g) return;
+    const modal=$('galleryModal'), grid=$('galleryGrid'); if(modal) modal.style.display='block';
+    if(grid) grid.innerHTML='<div style="color:#aaa;padding:20px">Création de 6 photos réalistes…</div>';
+    const baseSeed=hashId(g.id)*1000;
+    const urls=[];
+    for(let i=0;i<6;i++){
+      try{
+        const p=buildPhotoPrompt(g,'selfie réaliste, photo '+(i+1)+' de sa galerie, angle différent, même identité',getIntensity());
+        const [w,h]=(get('imageSize')||'768x1024').split('x');
+        const url='https://image.pollinations.ai/prompt/'+encodeURIComponent(p)+'?model='+encodeURIComponent(get('imageModel'))+'&width='+w+'&height='+h+'&seed='+(baseSeed+i)+'&nologo=true&safe=true';
+        const r=await fetch(url,{headers:{Authorization:'Bearer '+key()}});
+        if(!r.ok) continue;
+        const blob=await r.blob(); if(blob.size>800) urls.push(URL.createObjectURL(blob));
+      }catch(e){}
+      if(grid) grid.innerHTML=urls.map((u,j)=>'<img src="'+u+'" alt="'+esc(g.name)+' photo '+(j+1)+'" loading="lazy">').join('')||'<div style="color:#aaa;padding:20px">Aucune photo générée.</div>';
+    }
+  };
   window.generatePhoto = async function(prompt='') {
     if (!key()) return openAI('⚠️ Connecte l\'IA.');
     const g = currentGirl(); if (!g) return;
@@ -170,7 +191,7 @@
       const model = get('videoModel') || 'wan-fast';
       const url = 'https://gen.pollinations.ai/video/'+encodeURIComponent(p)+'?model='+encodeURIComponent(model)+'&duration=4&aspectRatio=9:16';
       const r = await fetch(url, { headers: { Authorization: 'Bearer '+key() } });
-      if (!r.ok) { const raw=await r.text().catch(()=>''); if(r.status===402) throw Error('HTTP 402 — solde/budget Pollen insuffisant pour la vidéo'); if(r.status===400) throw Error('HTTP 400 — modèle vidéo ou paramètres refusés'); throw Error('HTTP '+r.status+(raw?' — '+raw.slice(0,100):''));
+      if (!r.ok) { const raw=await r.text().catch(()=>''); if(r.status===402) throw Error('HTTP 402 — solde/budget Pollen insuffisant pour la vidéo'); if(r.status===400) throw Error('HTTP 400 — modèle vidéo ou paramètres refusés'); throw Error('HTTP '+r.status+(raw?' — '+raw.slice(0,100):'')); }
       const blob = await r.blob();
       const src = URL.createObjectURL(blob);
       removeTyping();
