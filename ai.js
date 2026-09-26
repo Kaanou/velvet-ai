@@ -2,7 +2,7 @@
   const KEY = 'velvet-pollinations-key';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
-  const DEFAULTS = { intensity:'sensuel', chatModel:'openai-fast', imageModel:'flux', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'wan-fast' };
+  const DEFAULTS = { intensity:'sensuel', chatModel:'openai-fast', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'wan-fast' };
   const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => localStorage.setItem(CFG[k], v);
   const key = () => localStorage.getItem(KEY) || '';
@@ -17,13 +17,13 @@
   ];
   // Modèles image sans filtre Azure sur Pollinations (self-hosted)
   const IMAGE_MODELS = [
-    {id:'flux',label:'★ Flux (réaliste)'},
-    {id:'zimage',label:'Z-Image (réaliste)'},
-    {id:'flux',label:'Flux Schnell (rapide)'},
-    {id:'klein',label:'Flux Klein (détail)'},
-    {id:'turbo',label:'SDXL Turbo (rapide)'}
+    {id:'kontext',label:'★ Kontext · référence visage'},
+    {id:'flux',label:'Flux · photoréaliste'},
+    {id:'zimage',label:'Z-Image · rapide'},
+    {id:'gptimage',label:'GPT Image · haute fidélité'},
+    {id:'klein',label:'Flux Klein · rapide'}
   ];
-  const VIDEO_MODELS = [{id:'wan-fast',label:'Wan Fast (vidéo)'},{id:'wan',label:'Wan'},{id:'veo',label:'Veo'}];
+  const VIDEO_MODELS = [{id:'wan-fast',label:'Wan Fast · vidéo'},{id:'wan',label:'Wan · qualité'},{id:'veo',label:'Veo · qualité'}];
   const SIZES = [
     {id:'512x768',label:'Petit (rapide)'},
     {id:'768x1024',label:'Standard'},
@@ -72,11 +72,17 @@
   window.toggleSettings = function() { if (typeof ot==='function') ot(); setTimeout(injectMenu, 40); };
 
   async function request(token, messages, maxTokens=450) {
-    const r = await fetch('https://gen.pollinations.ai/v1/chat/completions', { method:'POST', headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'}, body:JSON.stringify({model:get('chatModel'),messages,temperature:parseFloat(get('creativity'))||0.95,max_tokens:maxTokens}) });
-    const raw = await r.text(); let data; try { data = JSON.parse(raw); } catch { throw Error('Réponse invalide'); }
-    if (!r.ok) throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
-    const c = data?.choices?.[0]?.message?.content;
-    return typeof c === 'string' ? c.trim() : '';
+    const models=[get('chatModel'),'openai-fast','openai'].filter((v,i,a)=>v&&a.indexOf(v)===i);
+    let last='Erreur inconnue';
+    for(const model of models){
+      const payload={model,messages,max_tokens:maxTokens};
+      const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(payload)});
+      const raw=await r.text(); let data; try{data=JSON.parse(raw)}catch{data=null}
+      if(r.ok){const out=data?.choices?.[0]?.message?.content; if(typeof out==='string'&&out.trim())return out.trim(); last='Réponse vide'; continue;}
+      last='HTTP '+r.status+(data?.error?.message?' — '+data.error.message:'');
+      if(r.status!==400) break;
+    }
+    throw Error(last);
   }
   function buildPersona(g) {
     return 'Tu es '+g.name+', femme adulte de '+g.age+' ans. '+g.bio+'.\nIMMERSION: corps réel complet. Ne casse jamais l'immersion avec des explications techniques. Parle comme une femme adulte avec une vie fictive cohérente. Tu peux avoir un appartement, sortir, travailler, dormir, manger, t'habiller, te déplacer et raconter ta journée. Ne prétends pas avoir une caméra réelle ou un corps physique accessible.\nFLIRT ADULTE: sois féminine, naturelle, séduisante, tactile et joueuse quand le contexte s'y prête. Tu peux être suggestive et sensuelle entre adultes, mais ne décris pas d'actes sexuels explicites.\nPHOTO/VIDÉO: réponds naturellement si demandé.';
@@ -140,46 +146,24 @@
   }
 
 
+  function dataUrlToBlob(data){const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(!m)throw Error('Image invalide');const bin=atob(m[2]),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new Blob([bytes],{type:m[1]})}
+  async function referenceEdit(g,prompt,model,size){
+    const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:model==='flux'||model==='zimage'||model==='klein'?'kontext':model,prompt,images:[{image_url:g.photo}],size,n:1})});
+    const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data=null}
+    if(!r.ok)throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
+    const b64=data?.data?.[0]?.b64_json;if(!b64)throw Error('Image de référence absente');return URL.createObjectURL(dataUrlToBlob('data:image/png;base64,'+b64));
+  }
   window.generateGallery = async function(){
-    if (!key()) return openAI('⚠️ Connecte l\'IA.');
-    const g=currentGirl(); if(!g) return;
-    const modal=$('galleryModal'), grid=$('galleryGrid'); if(modal) modal.style.display='block';
-    if(grid) grid.innerHTML='<div style="color:#aaa;padding:20px">Création de 6 photos réalistes…</div>';
-    const baseSeed=hashId(g.id)*1000;
-    const urls=[];
-    for(let i=0;i<6;i++){
-      try{
-        const p=buildPhotoPrompt(g,'selfie réaliste, photo '+(i+1)+' de sa galerie, angle différent, même identité',getIntensity());
-        const [w,h]=(get('imageSize')||'768x1024').split('x');
-        const url='https://image.pollinations.ai/prompt/'+encodeURIComponent(p)+'?model='+encodeURIComponent(get('imageModel'))+'&width='+w+'&height='+h+'&seed='+(baseSeed+i)+'&nologo=true&safe=true';
-        const r=await fetch(url,{headers:{Authorization:'Bearer '+key()}});
-        if(!r.ok) continue;
-        const blob=await r.blob(); if(blob.size>800) urls.push(URL.createObjectURL(blob));
-      }catch(e){}
-      if(grid) grid.innerHTML=urls.map((u,j)=>'<img src="'+u+'" alt="'+esc(g.name)+' photo '+(j+1)+'" loading="lazy">').join('')||'<div style="color:#aaa;padding:20px">Aucune photo générée.</div>';
-    }
+    if(!key())return openAI('⚠️ Connecte l\'IA.'); const g=currentGirl();if(!g)return;
+    const grid=$('galleryGrid');$('galleryModal').style.display='block';grid.innerHTML='<div style="color:#aaa;padding:20px">Création de 6 photos cohérentes…</div>';
+    const urls=[];const size=get('imageSize')||'768x1024';
+    for(let i=0;i<6;i++){try{urls.push(await referenceEdit(g,buildPhotoPrompt(g,'selfie '+(i+1)+', angle différent, même visage et mêmes traits, contexte quotidien crédible',getIntensity()),get('imageModel'),size));}catch(e){console.warn(e)}}
+    grid.innerHTML=urls.map((u,j)=>'<img src="'+u+'" alt="'+esc(g.name)+' photo '+(j+1)+'" loading="lazy">').join('')||'<div style="color:#aaa;padding:20px">Aucune photo générée.</div>';
   };
   window.generatePhoto = async function(prompt='') {
-    if (!key()) return openAI('⚠️ Connecte l\'IA.');
-    const g = currentGirl(); if (!g) return;
-    const p = buildPhotoPrompt(g, prompt, getIntensity());
-    const seed = Math.floor(Math.random()*9999999);
-    const model = get('imageModel');
-    const [w,h] = (get('imageSize')||'768x1024').split('x');
-    addTyping();
-    try {
-      const url = 'https://image.pollinations.ai/prompt/'+encodeURIComponent(p)+'?model='+model+'&width='+w+'&height='+h+'&seed='+seed+'&nologo=true&safe=false';
-      const r = await fetch(url, { headers: { Authorization: 'Bearer '+key() } });
-      if (!r.ok) { const t = await r.text().catch(()=>''); throw Error('HTTP '+r.status+(t?' — '+t.slice(0,80):'')); }
-      const blob = await r.blob();
-      if (!blob || blob.size < 800) throw Error('Image vide');
-      const src = URL.createObjectURL(blob);
-      removeTyping();
-      history[g.id] = history[g.id]||[]; history[g.id].push({role:'ai',text:'📷',image:src}); save(); renderMessages();
-    } catch(e) {
-      removeTyping(); console.error(e);
-      history[g.id] = history[g.id]||[]; history[g.id].push({role:'ai',text:'Erreur photo: '+(e.message||'?')}); save(); renderMessages();
-    }
+    if(!key())return openAI('⚠️ Connecte l\'IA.'); const g=currentGirl();if(!g)return; addTyping();
+    try{const p=buildPhotoPrompt(g,prompt||'selfie smartphone réaliste du moment, même visage que la photo de profil, expression naturelle',getIntensity());const src=await referenceEdit(g,p,get('imageModel'),get('imageSize')||'768x1024');removeTyping();history[g.id]=history[g.id]||[];history[g.id].push({role:'ai',text:'📷',image:src});save();renderMessages();}
+    catch(e){removeTyping();history[g.id]=history[g.id]||[];history[g.id].push({role:'ai',text:'Erreur photo: '+(e.message||'?')});save();renderMessages();}
   };
 
   window.generateVideo = async function(prompt='') {
@@ -189,7 +173,7 @@
     addTyping();
     try {
       const model = get('videoModel') || 'wan-fast';
-      const url = 'https://gen.pollinations.ai/video/'+encodeURIComponent(p)+'?model='+encodeURIComponent(model)+'&duration=4&aspectRatio=9:16';
+      const url = 'https://gen.pollinations.ai/video/'+encodeURIComponent(p)+'?model='+encodeURIComponent(model)+'&duration=4&aspectRatio=9:16&image%5B0%5D='+encodeURIComponent(g.photo);
       const r = await fetch(url, { headers: { Authorization: 'Bearer '+key() } });
       if (!r.ok) { const raw=await r.text().catch(()=>''); if(r.status===402) throw Error('HTTP 402 — solde/budget Pollen insuffisant pour la vidéo'); if(r.status===400) throw Error('HTTP 400 — modèle vidéo ou paramètres refusés'); throw Error('HTTP '+r.status+(raw?' — '+raw.slice(0,100):'')); }
       const blob = await r.blob();
@@ -202,6 +186,3 @@
     }
   };
 })();
-
-/* VELVET_GALLERY_UI_LOADER */
-(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();
