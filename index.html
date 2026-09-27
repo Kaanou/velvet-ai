@@ -135,5 +135,24 @@ function generatePhoto(){ if(window.generatePhoto) window.generatePhoto(); else 
 function generateVideo(){ if(window.generateVideo) window.generateVideo(); else alert('Connecte l’IA d’abord'); }
 render();
 </script>
-<script src="./ai.js?v=14"></script><script>document.getElementById("aiKeyButton")?.addEventListener("click",()=>window.openAI?.());</script><script src="./ai.js"></script><script src="./model-routing-override.js"></script></body>
+<script>document.getElementById("aiKeyButton")?.addEventListener("click",()=>window.openAI?.());</script><script>
+(function(){
+  const b=document.getElementById('aiKeyButton');
+  if(!b)return;
+  function open(){
+    let m=document.getElementById('aiKeyModal');
+    if(!m){
+      m=document.createElement('div');m.id='aiKeyModal';
+      m.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.82);display:flex;align-items:flex-end;justify-content:center;padding:14px;box-sizing:border-box';
+      m.innerHTML='<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px;box-sizing:border-box;color:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:18px">🧠 Connecter l’IA</b><button id="aiClose" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Clé API Pollinations — stockée uniquement sur cet appareil.</p><input id="aiKeyInput" type="password" placeholder="Clé API…" style="width:100%;height:50px;box-sizing:border-box;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><button id="aiSave" style="width:100%;margin-top:10px;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:13px;font-weight:800">Activer</button><div id="aiStatus" style="font-size:11px;color:#777;margin-top:10px"></div></div>';
+      document.body.appendChild(m);
+      m.querySelector('#aiClose').onclick=()=>m.remove();
+      m.querySelector('#aiSave').onclick=()=>{const v=m.querySelector('#aiKeyInput').value.trim();if(!v){m.querySelector('#aiStatus').textContent='Colle une clé.';return}localStorage.setItem('velvet-pollinations-key',v);m.querySelector('#aiStatus').textContent='✓ Clé enregistrée';setTimeout(()=>m.remove(),500)};
+    }
+  }
+  b.addEventListener('click',open);
+})();
+</script>
+<script src="./ai.js?v=15"></script>
+</body>
 </html>
