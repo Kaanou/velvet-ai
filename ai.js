@@ -61,7 +61,7 @@
   box.querySelector('#vx').onclick = () => box.style.display = 'none';
   box.querySelector('#savek').onclick = () => { const v = vk.value.trim(); if (!v) return status('Colle une clé.'); localStorage.setItem(KEY, v); status('✓ OK'); box.style.display = 'none'; };
   box.querySelector('#delk').onclick = () => { localStorage.removeItem(KEY); status('Déconnectée.'); };
-  box.querySelector('#testk').onclick = async () => { const v = vk.value.trim() || key(); if (!v) return status('Aucune clé.'); status('Test…'); try { const r = await request(v, [{role:'user',content:'OK'}], 8); status(r ? '✓ OK' : '✕'); } catch(e) { status('✕ '+e.message); } };
+  box.querySelector('#testk').onclick = async () => { const v = vk.value.trim() || key(); if (!v) return status('Aucune clé.'); status('Test…'); try { const r = await request(v, [{role:'user',content:'Réponds uniquement OK'}], 8); if(r){ localStorage.setItem(KEY,v); status('✓ Clé valide et enregistrée.'); btn.textContent='IA ✓'; btn.style.borderColor='#ef4444'; setTimeout(()=>box.style.display='none',500); } else status('✕ Réponse vide'); } catch(e) { status('✕ '+e.message); } };
 
   function injectMenu() {
     const settings = document.getElementById('settings');
