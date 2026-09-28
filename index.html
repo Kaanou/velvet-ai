@@ -148,5 +148,5 @@ window.openAI = window.openAI || function(){
   m.querySelector('#vf-save').onclick=function(){var v=input.value.trim();if(!v){status.textContent='Colle une clé.';return}localStorage.setItem('velvet-pollinations-key',v);status.textContent='✓ Clé enregistrée. Recharge la page puis réessaie.'};
 };
 </script>
-<script src="./ai.js?v=18"></script><script src="./ai.js"></script></body>
+<script src="./ai.js?v=18"></script><script src="./ai.js"></script><script src="./model-routing-override.js"></script></body>
 </html>
