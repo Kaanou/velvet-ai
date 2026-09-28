@@ -135,5 +135,18 @@ function generatePhoto(){ if(window.generatePhoto) window.generatePhoto(); else 
 function generateVideo(){ if(window.generateVideo) window.generateVideo(); else alert('Connecte l’IA d’abord'); }
 render();
 </script>
+<script>
+window.openAI = window.openAI || function(){
+  var old=document.getElementById('velvet-key-fallback'); if(old){old.style.display='flex';return;}
+  var m=document.createElement('div'); m.id='velvet-key-fallback';
+  m.style='position:fixed;z-index:99999;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center;padding:12px';
+  m.innerHTML='<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px;color:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🧠 Connecter l’IA</b><button id="vf-close" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:13px">Clé API Pollinations — mémorisée uniquement sur cet appareil.</p><input id="vf-key" type="password" placeholder="Clé API…" style="box-sizing:border-box;width:100%;height:52px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><button id="vf-save" style="width:100%;margin-top:10px;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:14px;font-weight:800;font-size:16px">Activer</button><div id="vf-status" style="font-size:12px;color:#888;margin-top:10px"></div></div>';
+  document.body.appendChild(m);
+  var input=m.querySelector('#vf-key'), status=m.querySelector('#vf-status'), saved=localStorage.getItem('velvet-pollinations-key')||'';
+  if(saved) status.textContent='✓ Une clé est déjà enregistrée sur cet appareil.';
+  m.querySelector('#vf-close').onclick=function(){m.remove()};
+  m.querySelector('#vf-save').onclick=function(){var v=input.value.trim();if(!v){status.textContent='Colle une clé.';return}localStorage.setItem('velvet-pollinations-key',v);status.textContent='✓ Clé enregistrée. Recharge la page puis réessaie.'};
+};
+</script>
 <script src="./ai.js?v=18"></script><script src="./ai.js"></script></body>
 </html>
