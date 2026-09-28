@@ -61,7 +61,8 @@
   document.body.appendChild(box);
   const vk = box.querySelector('#vk'), ks = box.querySelector('#ks');
   const status = m => { ks.textContent = m || (key() ? '✓ Connectée.' : 'Non connectée.'); btn.textContent=key()?'IA ✓':'IA'; btn.style.borderColor=key()?'#ef4444':'#302b2d'; };
-  const openAI = m => { box.style.display = 'flex'; status(m); setTimeout(() => vk.focus(), 50); };\n  window.openAI = openAI;
+  const openAI = m => { box.style.display = 'flex'; status(m); setTimeout(() => vk.focus(), 50); };
+  window.openAI = openAI;
   btn.onclick = () => openAI();
   status();
   box.querySelector('#vx').onclick = () => box.style.display = 'none';
