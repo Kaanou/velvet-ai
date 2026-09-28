@@ -52,7 +52,7 @@
 </head>
 <body>
 <div class="wrap">
-<header class="nav"><div class="brand"><div class="brandmark">V</div><span>Velvet AI</span></div><div style="display:flex;align-items:center;gap:8px"><button id="aiKeyButton" type="button" style="border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:8px 10px;font-weight:800;font-size:11px;height:34px">IA</button><div class="status">● 48 compagnes · 18+</div></div></header>
+<header class="nav"><div class="brand"><div class="brandmark">V</div><span>Velvet AI</span></div><div style="display:flex;align-items:center;gap:8px"><button id="aiKeyButton" type="button" onclick="if(window.openAI)window.openAI();else alert('Le module IA n’est pas chargé. Recharge la page.')" style="border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:8px 10px;font-weight:800;font-size:11px;height:34px;cursor:pointer">🧠 IA</button><div class="status">● 48 compagnes · 18+</div></div></header>
 <section id="home">
 <div class="hero"><div class="eyebrow">Compagnes virtuelles · 18+</div><h1>Une présence.<br>Une personnalité.</h1><p>48 compagnes majeures. Chat, galeries photo et vidéos.</p></div>
 <div class="sectionhead"><h2>Qui veux-tu rencontrer ?</h2><span id="count">48 profils</span></div>
@@ -135,5 +135,5 @@ function generatePhoto(){ if(window.generatePhoto) window.generatePhoto(); else 
 function generateVideo(){ if(window.generateVideo) window.generateVideo(); else alert('Connecte l’IA d’abord'); }
 render();
 </script>
-<script src="./ai.js?v=17"></script><script src="./model-routing-override.js"></script></body>
+<script src="./ai.js?v=18"></script></body>
 </html>
