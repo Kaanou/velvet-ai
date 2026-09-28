@@ -2,7 +2,7 @@
   const KEY = 'velvet-pollinations-key';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
-  const DEFAULTS = { intensity:'sensuel', chatModel:'openai-fast', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
+  const DEFAULTS = { intensity:'sensuel', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
   const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => localStorage.setItem(CFG[k], v);
   const key = () => localStorage.getItem(KEY) || '';
@@ -39,21 +39,14 @@
     {id:'1024x1280',label:'HD'}
   ];
 
-  const btn = document.createElement('button');
-  btn.id='velvet-ai-button';
+  const btn = document.getElementById('aiKeyButton') || document.createElement('button');
+  btn.id='aiKeyButton';
   btn.textContent='IA';
   btn.title='Connecter l’IA';
   btn.setAttribute('aria-label','Connecter l’IA');
   btn.style.cssText='border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:7px 10px;font-weight:800;font-size:11px;line-height:1;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:34px';
-  const head=document.querySelector('.chathead');
-  const more=document.querySelector('.more');
-  if(head) head.insertBefore(btn,more||null);
-  else {
-    btn.style.position='fixed';
-    btn.style.zIndex='9999';
-    btn.style.top='calc(12px + env(safe-area-inset-top))';
-    btn.style.right='12px';
-    document.body.appendChild(btn);
+  if (!document.getElementById('aiKeyButton')) {
+    btn.style.position='fixed'; btn.style.zIndex='9999'; btn.style.top='calc(12px + env(safe-area-inset-top))'; btn.style.right='12px'; document.body.appendChild(btn);
   }
   const box = document.createElement('div');
   box.style.cssText = 'display:none;position:fixed;z-index:10002;inset:0;background:#000b;align-items:flex-end;justify-content:center;padding:12px';
@@ -94,6 +87,7 @@
   window.toggleSettings = function() { if (typeof ot==='function') ot(); setTimeout(injectMenu, 40); };
 
   async function request(token, messages, maxTokens=450) {
+    if (!token) throw Error('Clé API absente');
     const models=[get('chatModel'),'openai-fast','openai'].filter((v,i,a)=>v&&a.indexOf(v)===i);
     let last='Erreur inconnue';
     for(const model of models){
