@@ -6,7 +6,16 @@
   const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => localStorage.setItem(CFG[k], v);
   const key = () => localStorage.getItem(KEY) || '';
-  const getIntensity = () => get('intensity');
+  const LEVELS = [
+    {id:'soft',label:'1 · Doux'},
+    {id:'flirt',label:'2 · Flirt'},
+    {id:'sensuel',label:'3 · Sensuel'},
+    {id:'seducteur',label:'4 · Très séduisant'},
+    {id:'adulte',label:'5 · Très adulte · suggestif'}
+  ];
+  const girlLevelKey = () => { const g=currentGirl(); return g ? 'velvet-level-'+g.id : 'velvet-level-default'; };
+  const getIntensity = () => localStorage.getItem(girlLevelKey()) || get('intensity');
+  const setIntensity = v => localStorage.setItem(girlLevelKey(), v);
   const currentGirl = () => (typeof current !== 'undefined' && current !== null) ? girls[current] : null;
   const $ = id => document.getElementById(id);
   const CHAT_MODELS = [
@@ -67,14 +76,14 @@
     div.id = 'velvet-adv-menu';
     div.style.cssText = 'margin:8px 0;padding-top:8px;border-top:1px solid #302b2d';
     const opt = (list, cur) => list.map(m => '<option value="'+m.id+'" '+(m.id===cur?'selected':'')+'>'+m.label+'</option>').join('');
-    div.innerHTML = '<div style="font-size:11px;color:#999;margin-bottom:6px;font-weight:700">Niveau</div><div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px"><button data-level="soft" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">Soft</button><button data-level="sensuel" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">Sensuel / Lingerie</button><button data-level="hardcore" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">🔥 Intime adulte</button></div><div style="font-size:11px;color:#999;margin:8px 0 6px;font-weight:700">⚙ Avancé</div><label style="font-size:10px;color:#888">Modèle chat</label><select id="v-chat" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(CHAT_MODELS,get('chatModel'))+'</select><label style="font-size:10px;color:#888">Modèle image (NSFW)</label><select id="v-img" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(IMAGE_MODELS,get('imageModel'))+'</select><label style="font-size:10px;color:#888">Vidéo</label><select id="v-video" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(VIDEO_MODELS,get('videoModel'))+'</select><label style="font-size:10px;color:#888">Taille</label><select id="v-size" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(SIZES,get('imageSize'))+'</select><label style="display:flex;gap:8px;align-items:center;font-size:12px;color:#ddd;margin:6px 0;cursor:pointer"><input id="v-nude" type="checkbox" '+(get('forceNude')==='1'?'checked':'')+' style="accent-color:#ef4444"> Mode explicite</label><div id="v-st" style="font-size:10px;color:#777;margin-top:6px"></div>';
+    div.innerHTML = '<div style="font-size:11px;color:#999;margin-bottom:6px;font-weight:700">Niveau de séduction</div><div style="font-size:10px;color:#666;margin-bottom:8px">Réglage indépendant pour chaque compagne</div><div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">'+LEVELS.map(x=>'<button data-level="'+x.id+'" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">'+x.label+'</button>').join('')+'</div><div style="font-size:11px;color:#999;margin:8px 0 6px;font-weight:700">⚙ Avancé</div><label style="font-size:10px;color:#888">Modèle chat</label><select id="v-chat" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(CHAT_MODELS,get('chatModel'))+'</select><label style="font-size:10px;color:#888">Modèle image</label><select id="v-img" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;color:#ddd;border-radius:8px;padding:7px;font-size:11px">'+opt(IMAGE_MODELS,get('imageModel'))+'</select><label style="font-size:10px;color:#888">Vidéo</label><select id="v-video" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(VIDEO_MODELS,get('videoModel'))+'</select><label style="font-size:10px;color:#888">Taille</label><select id="v-size" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(SIZES,get('imageSize'))+'</select><div id="v-st" style="font-size:10px;color:#777;margin-top:6px"></div>';
     settings.insertBefore(div, settings.firstChild);
     const hl = () => { const lvl = getIntensity(); div.querySelectorAll('.v-lvl').forEach(b => { b.style.borderColor = b.dataset.level===lvl?'#ef4444':'#383235'; b.style.background = b.dataset.level===lvl?'#2a1515':'#1b191a'; }); document.getElementById('v-st').textContent = get('chatModel').split('/').pop()+' · '+get('imageModel'); };
-    div.querySelectorAll('.v-lvl').forEach(b => b.onclick = () => { set('intensity', b.dataset.level); hl(); });
+    div.querySelectorAll('.v-lvl').forEach(b => b.onclick = () => { setIntensity(b.dataset.level); hl(); });
     document.getElementById('v-chat').onchange = e => { set('chatModel', e.target.value); hl(); };
     document.getElementById('v-img').onchange = e => { set('imageModel', e.target.value); hl(); };
     document.getElementById('v-video').onchange = e => { set('videoModel', e.target.value); hl(); }; document.getElementById('v-size').onchange = e => { set('imageSize', e.target.value); hl(); };
-    document.getElementById('v-nude').onchange = e => { set('forceNude', e.target.checked?'1':'0'); hl(); };
+    
     hl();
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectMenu); else injectMenu();
