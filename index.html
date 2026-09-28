@@ -148,5 +148,31 @@ window.openAI = window.openAI || function(){
   m.querySelector('#vf-save').onclick=function(){var v=input.value.trim();if(!v){status.textContent='Colle une clé.';return}localStorage.setItem('velvet-pollinations-key',v);status.textContent='✓ Clé enregistrée. Recharge la page puis réessaie.'};
 };
 </script>
-<script src="./ai.js?v=18"></script><script src="./ai.js"></script><script src="./model-routing-override.js"></script></body>
+<script>
+(function(){
+  function ensure(){
+    var b=document.getElementById('aiKeyButton'); if(!b)return;
+    b.onclick=function(){
+      var old=document.getElementById('velvet-key-test'); if(old){old.remove();return;}
+      var m=document.createElement('div'); m.id='velvet-key-test';
+      m.style='position:fixed;z-index:100000;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:flex-end;justify-content:center;padding:12px';
+      m.innerHTML='<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px;color:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🧠 Test IA</b><button id="aitx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Teste direct de Pollinations, sans passer par le module Velvet.</p><input id="aitk" type="password" placeholder="Clé API…" style="box-sizing:border-box;width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><button id="aitgo" style="width:100%;margin-top:10px;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:14px;font-weight:800">Tester la clé</button><div id="aits" style="font-size:12px;color:#aaa;margin-top:12px;white-space:pre-wrap"></div></div>';
+      document.body.appendChild(m);
+      var k=m.querySelector('#aitk'), s=m.querySelector('#aits'); k.value=localStorage.getItem('velvet-pollinations-key')||'';
+      m.querySelector('#aitx').onclick=function(){m.remove()};
+      m.querySelector('#aitgo').onclick=async function(){
+        var v=k.value.trim(); if(!v){s.textContent='Aucune clé.';return}
+        s.textContent='Test en cours…';
+        try{
+          var r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:'Réponds uniquement OK'}],max_tokens:8})});
+          var raw=await r.text(), data; try{data=JSON.parse(raw)}catch(e){data=null}
+          var msg=data&&data.error&&data.error.message?' — '+data.error.message:'';
+          s.textContent=r.ok?'✓ CLÉ VALIDE — HTTP '+r.status+(data&&data.choices?' — réponse reçue':''):'✕ HTTP '+r.status+msg;
+        }catch(e){s.textContent='✕ Réseau/CORS — '+e.message}
+      };
+    };
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure);else ensure();
+})();
+</script><script src="./ai.js?v=18"></script><script src="./ai.js"></script><script src="./model-routing-override.js"></script></body>
 </html>
