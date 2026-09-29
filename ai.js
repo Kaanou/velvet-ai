@@ -2,7 +2,7 @@
   const KEY = 'velvet-pollinations-key';
   // GITHUB PAGES MODE: replace the placeholder with your Pollinations sk_ key.
   // WARNING: this key is public in a static site. Use only a limited-budget key.
-  const PUBLIC_POLLINATIONS_KEY = 'REPLACE_WITH_YOUR_POLLINATIONS_SK_KEY';
+  const PUBLIC_POLLINATIONS_KEY = 'sk_H0OawVrPlrNdFHcnDq8z8HZyh9tdoyad';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
   const DEFAULTS = { intensity:'sensuel', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
