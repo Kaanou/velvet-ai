@@ -64,7 +64,7 @@
   box.querySelector('#vx').onclick = () => box.style.display = 'none';
   box.querySelector('#savek').onclick = () => { status(key() ? '✓ IA automatique.' : '⚠️ Clé absente.'); box.style.display = 'none'; };
   box.querySelector('#delk').onclick = () => { status('La clé est intégrée au code de Velvet.'); };
-  box.querySelector('#testk').onclick = async () => { status('Test du moteur…'); try { const r = await request('server', [{role:'user',content:'Réponds uniquement OK'}], 8); status(r ? '✓ IA opérationnelle.' : '✕ Réponse vide'); } catch(e) { status('✕ '+e.message); } };
+  box.querySelector('#testk').onclick = async () => { status('Test du moteur…'); try { const r = await request(key(), [{role:'user',content:'Réponds uniquement OK'}], 8); status(r ? '✓ IA opérationnelle.' : '✕ Réponse vide'); } catch(e) { status('✕ '+e.message); } };
 
   function injectMenu() {
     const settings = document.getElementById('settings');
