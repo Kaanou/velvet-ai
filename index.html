@@ -120,6 +120,8 @@ function addTyping(){removeTyping(); const x=document.createElement('div'); x.cl
 function removeTyping(){const x=$('typing'); if(x)x.remove()}
 function send(){
   if(window.__velvetSend) return window.__velvetSend();
+  if(window.openAI) return window.openAI('⚠️ Le moteur IA n’est pas encore chargé. Recharge la page.');
+  alert('Le moteur IA n’est pas chargé. Recharge la page.');
   const input=$('input'); const text=input.value.trim();
   if(!text||current===null)return;
   const g=girls[current]; input.value='';
@@ -135,45 +137,5 @@ function generatePhoto(){ if(window.generatePhoto) window.generatePhoto(); else 
 function generateVideo(){ if(window.generateVideo) window.generateVideo(); else alert('Connecte l’IA d’abord'); }
 render();
 </script>
-<script>
-window.openAI = window.openAI || function(){
-  var old=document.getElementById('velvet-key-fallback'); if(old){old.style.display='flex';return;}
-  var m=document.createElement('div'); m.id='velvet-key-fallback';
-  m.style='position:fixed;z-index:99999;inset:0;background:rgba(0,0,0,.78);display:flex;align-items:flex-end;justify-content:center;padding:12px';
-  m.innerHTML='<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px;color:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🧠 Connecter l’IA</b><button id="vf-close" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:13px">Clé API Pollinations — mémorisée uniquement sur cet appareil.</p><input id="vf-key" type="password" placeholder="Clé API…" style="box-sizing:border-box;width:100%;height:52px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><button id="vf-save" style="width:100%;margin-top:10px;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:14px;font-weight:800;font-size:16px">Activer</button><div id="vf-status" style="font-size:12px;color:#888;margin-top:10px"></div></div>';
-  document.body.appendChild(m);
-  var input=m.querySelector('#vf-key'), status=m.querySelector('#vf-status'), saved=localStorage.getItem('velvet-pollinations-key')||'';
-  if(saved) status.textContent='✓ Une clé est déjà enregistrée sur cet appareil.';
-  m.querySelector('#vf-close').onclick=function(){m.remove()};
-  m.querySelector('#vf-save').onclick=function(){var v=input.value.trim();if(!v){status.textContent='Colle une clé.';return}localStorage.setItem('velvet-pollinations-key',v);status.textContent='✓ Clé enregistrée. Recharge la page puis réessaie.'};
-};
-</script>
-<script>
-(function(){
-  function ensure(){
-    var b=document.getElementById('aiKeyButton'); if(!b)return;
-    b.onclick=function(){
-      var old=document.getElementById('velvet-key-test'); if(old){old.remove();return;}
-      var m=document.createElement('div'); m.id='velvet-key-test';
-      m.style='position:fixed;z-index:100000;inset:0;background:rgba(0,0,0,.82);display:flex;align-items:flex-end;justify-content:center;padding:12px';
-      m.innerHTML='<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px;color:#fff"><div style="display:flex;justify-content:space-between;align-items:center"><b style="font-size:20px">🧠 Test IA</b><button id="aitx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Teste direct de Pollinations, sans passer par le module Velvet.</p><input id="aitk" type="password" placeholder="Clé API…" style="box-sizing:border-box;width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><button id="aitgo" style="width:100%;margin-top:10px;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:14px;font-weight:800">Tester la clé</button><div id="aits" style="font-size:12px;color:#aaa;margin-top:12px;white-space:pre-wrap"></div></div>';
-      document.body.appendChild(m);
-      var k=m.querySelector('#aitk'), s=m.querySelector('#aits'); k.value=localStorage.getItem('velvet-pollinations-key')||'';
-      m.querySelector('#aitx').onclick=function(){m.remove()};
-      m.querySelector('#aitgo').onclick=async function(){
-        var v=k.value.trim(); if(!v){s.textContent='Aucune clé.';return}
-        s.textContent='Test en cours…';
-        try{
-          var r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:'Réponds uniquement OK'}],max_tokens:8})});
-          var raw=await r.text(), data; try{data=JSON.parse(raw)}catch(e){data=null}
-          var msg=data&&data.error&&data.error.message?' — '+data.error.message:'';
-          if(r.ok){localStorage.setItem('velvet-pollinations-key',v);s.textContent='✓ CLÉ VALIDE — HTTP '+r.status+' — clé enregistrée';setTimeout(function(){m.remove();var btn=document.getElementById('aiKeyButton');if(btn){btn.textContent='🧠 IA ✓';btn.setAttribute('aria-label','IA connectée');}},350);}else{s.textContent='✕ HTTP '+r.status+msg;}
-        }catch(e){s.textContent='✕ Réseau/CORS — '+e.message}
-      };
-    };
-  }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure);else ensure();
-})();
-</script><script src="./ai.js?v=21"></script>
-<script src="./model-routing-override.js"></script><script src="./ai.js"></script></body>
+<script src="./model-routing-override.js?v=2"></script><script src="./ai.js?v=22"></script></body>
 </html>
