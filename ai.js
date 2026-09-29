@@ -82,9 +82,15 @@
     
     hl();
   }
-  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', injectMenu); else injectMenu();
+  try {
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { try { injectMenu(); } catch(e) { console.warn('Velvet settings menu:', e); } });
+    else injectMenu();
+  } catch(e) { console.warn('Velvet settings menu:', e); }
   const ot = window.toggleSettings;
-  window.toggleSettings = function() { if (typeof ot==='function') ot(); setTimeout(injectMenu, 40); };
+  window.toggleSettings = function() {
+    if (typeof ot==='function') ot();
+    setTimeout(() => { try { injectMenu(); } catch(e) { console.warn('Velvet settings menu:', e); } }, 40);
+  };
 
   async function request(token, messages, maxTokens=450) {
     if (!token) throw Error('Clé API absente');
