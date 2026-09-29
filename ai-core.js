@@ -2,20 +2,17 @@
 (() => {
   const KEY='velvet-pollinations-key';
   const $=id=>document.getElementById(id);
-  const getKey=()=>localStorage.getItem(KEY)||'';
+  const getKey=()=> 'server';
   async function callAI(token,text,g){
-    if(!token) throw Error('Clé API absente');
     const persona='Tu es '+g.name+', une femme adulte de '+g.age+' ans. '+(g.bio||'')+'. Réponds naturellement comme une compagne virtuelle fictive. Reste dans le contexte. Tu peux être chaleureuse, joueuse et suggestive entre adultes, sans contenu sexuel explicite.';
     const h=history[g.id]||[];
     const messages=[{role:'system',content:persona},...h.slice(-18).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})),{role:'user',content:text}];
-    let last='Erreur IA';
-    for(const model of ['openai/gpt-5.4-nano','openai-fast','openai']){
-      const r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify({model,messages,max_tokens:450})});
-      const raw=await r.text();let data=null;try{data=JSON.parse(raw)}catch{}
-      if(r.ok){const out=data?.choices?.[0]?.message?.content;if(out)return out.trim();last='Réponse vide';}
-      else{last='HTTP '+r.status+(data?.error?.message?' — '+data.error.message:'');if(r.status!==400)break;}
-    }
-    throw Error(last);
+    const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model:'openai/gpt-5.4-nano',messages,max_tokens:450})});
+    const raw=await r.text();let data=null;try{data=JSON.parse(raw)}catch{}
+    if(!r.ok) throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
+    const out=data?.choices?.[0]?.message?.content;
+    if(!out) throw Error('Réponse vide');
+    return out.trim();
   }
   window.__velvetSend=async function(){
     const input=$('input'), text=input?.value?.trim();
@@ -28,5 +25,5 @@
     save();renderMessages();
   };
   const b=document.getElementById('aiKeyButton');
-  if(b&&getKey()){b.textContent='IA ✓';b.style.borderColor='#ef4444';}
+  if(b){b.textContent='IA ✓';b.style.borderColor='#ef4444';}
 })();
