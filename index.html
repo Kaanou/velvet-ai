@@ -167,7 +167,7 @@ window.openAI = window.openAI || function(){
           var r=await fetch('https://gen.pollinations.ai/v1/chat/completions',{method:'POST',headers:{Authorization:'Bearer '+v,'Content-Type':'application/json'},body:JSON.stringify({model:'openai',messages:[{role:'user',content:'Réponds uniquement OK'}],max_tokens:8})});
           var raw=await r.text(), data; try{data=JSON.parse(raw)}catch(e){data=null}
           var msg=data&&data.error&&data.error.message?' — '+data.error.message:'';
-          s.textContent=r.ok?'✓ CLÉ VALIDE — HTTP '+r.status+(data&&data.choices?' — réponse reçue':''):'✕ HTTP '+r.status+msg;
+          if(r.ok){localStorage.setItem('velvet-pollinations-key',v);s.textContent='✓ CLÉ VALIDE — HTTP '+r.status+' — clé enregistrée';setTimeout(function(){m.remove();var btn=document.getElementById('aiKeyButton');if(btn){btn.textContent='🧠 IA ✓';btn.setAttribute('aria-label','IA connectée');}},350);}else{s.textContent='✕ HTTP '+r.status+msg;}
         }catch(e){s.textContent='✕ Réseau/CORS — '+e.message}
       };
     };
@@ -175,5 +175,5 @@ window.openAI = window.openAI || function(){
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ensure);else ensure();
 })();
 </script><script src="./ai.js?v=19"></script>
-<script src="./ai.js"></script></body>
+</body>
 </html>
