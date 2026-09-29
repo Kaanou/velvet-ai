@@ -1,11 +1,14 @@
 (() => {
   const KEY = 'velvet-pollinations-key';
+  // GITHUB PAGES MODE: replace the placeholder with your Pollinations sk_ key.
+  // WARNING: this key is public in a static site. Use only a limited-budget key.
+  const PUBLIC_POLLINATIONS_KEY = 'REPLACE_WITH_YOUR_POLLINATIONS_SK_KEY';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
   const DEFAULTS = { intensity:'sensuel', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
   const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => localStorage.setItem(CFG[k], v);
-  const key = () => 'server';
+  const key = () => PUBLIC_POLLINATIONS_KEY.startsWith('sk_') ? PUBLIC_POLLINATIONS_KEY : '';
   const LEVELS = [
     {id:'soft',label:'1 · Doux'},
     {id:'flirt',label:'2 · Flirt'},
@@ -53,14 +56,14 @@
   box.innerHTML = '<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l\'IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Clé API Pollinations — mémorisée uniquement sur cet appareil.</p><input id="vk" type="password" placeholder="Clé API…" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>';
   document.body.appendChild(box);
   const vk = box.querySelector('#vk'), ks = box.querySelector('#ks');
-  const status = m => { ks.textContent = m || '✓ IA automatique.'; btn.textContent='IA ✓'; btn.style.borderColor='#ef4444'; };
+  const status = m => { ks.textContent = m || (key() ? '✓ IA automatique.' : '⚠️ Clé à configurer dans ai.js'); btn.textContent=key()?'IA ✓':'IA'; btn.style.borderColor=key()?'#ef4444':'#302b2d'; };
   const openAI = m => { box.style.display = 'flex'; status(m); setTimeout(() => vk.focus(), 50); };
   window.openAI = openAI;
-  btn.onclick = () => status('✓ IA automatique — serveur sécurisé.');
+  btn.onclick = () => { if(!key()) return status('⚠️ Ajoute la clé Pollinations dans ai.js.'); status('✓ IA automatique.'); };
   status();
   box.querySelector('#vx').onclick = () => box.style.display = 'none';
-  box.querySelector('#savek').onclick = () => { status('✓ IA automatique — aucune clé à saisir.'); box.style.display = 'none'; };
-  box.querySelector('#delk').onclick = () => { localStorage.removeItem(KEY); status('Déconnectée.'); };
+  box.querySelector('#savek').onclick = () => { status(key() ? '✓ IA automatique.' : '⚠️ Clé absente.'); box.style.display = 'none'; };
+  box.querySelector('#delk').onclick = () => { status('La clé est intégrée au code de Velvet.'); };
   box.querySelector('#testk').onclick = async () => { status('Test du moteur…'); try { const r = await request('server', [{role:'user',content:'Réponds uniquement OK'}], 8); status(r ? '✓ IA opérationnelle.' : '✕ Réponse vide'); } catch(e) { status('✕ '+e.message); } };
 
   function injectMenu() {
@@ -93,16 +96,17 @@
   };
 
   async function request(token, messages, maxTokens=450) {
-    const models=[get('chatModel'),'openai/gpt-5.4-nano','openai-fast','openai'].filter((v,i,a)=>v&&a.indexOf(v)===i);
-    let last='Erreur inconnue';
-    for(const model of models){
-      const r=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({model,messages,max_tokens:maxTokens})});
-      const raw=await r.text(); let data; try{data=JSON.parse(raw)}catch{data=null}
-      if(r.ok){const out=data?.choices?.[0]?.message?.content; if(typeof out==='string'&&out.trim())return out.trim(); last='Réponse vide'; continue;}
-      last='HTTP '+r.status+(data?.error?.message?' — '+data.error.message:'');
-      if(r.status!==400) break;
-    }
-    throw Error(last);
+    const model = get('chatModel') || 'openai-fast';
+    const r = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
+      body:JSON.stringify({model,messages,max_tokens:maxTokens})
+    });
+    const raw=await r.text(); let data; try{data=JSON.parse(raw)}catch{data=null}
+    if(!r.ok) throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
+    const out=data?.choices?.[0]?.message?.content;
+    if(typeof out!=='string'||!out.trim()) throw Error('Réponse vide');
+    return out.trim();
   }
   function buildPersona(g) {
     return 'Tu es '+g.name+', femme adulte de '+g.age+' ans. '+g.bio+'.\nIMMERSION: corps réel complet. Ne casse jamais l'immersion avec des explications techniques. Parle comme une femme adulte avec une vie fictive cohérente. Tu peux avoir un appartement, sortir, travailler, dormir, manger, t'habiller, te déplacer et raconter ta journée. Ne prétends pas avoir une caméra réelle ou un corps physique accessible.\nFLIRT ADULTE: sois féminine, naturelle, séduisante, tactile et joueuse quand le contexte s'y prête. Tu peux être suggestive et sensuelle entre adultes, mais ne décris pas d'actes sexuels explicites.\nPHOTO/VIDÉO: réponds naturellement si demandé.';
