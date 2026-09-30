@@ -5,7 +5,7 @@
   const PUBLIC_POLLINATIONS_KEY = 'sk_H0OawVrPlrNdFHcnDq8z8HZyh9tdoyad';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
-  const DEFAULTS = { intensity:'sensuel', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
+  const DEFAULTS = { intensity:'adulte', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
   const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => localStorage.setItem(CFG[k], v);
   const key = () => PUBLIC_POLLINATIONS_KEY.startsWith('sk_') ? PUBLIC_POLLINATIONS_KEY : '';
@@ -17,7 +17,7 @@
     {id:'adulte',label:'5 · Très adulte · suggestif'}
   ];
   const girlLevelKey = () => { const g=currentGirl(); return g ? 'velvet-level-'+g.id : 'velvet-level-default'; };
-  const getIntensity = () => localStorage.getItem(girlLevelKey()) || get('intensity');
+  const getIntensity = () => localStorage.getItem(girlLevelKey()) || 'adulte';
   const setIntensity = v => localStorage.setItem(girlLevelKey(), v);
   const currentGirl = () => (typeof current !== 'undefined' && current !== null) ? girls[current] : null;
   const $ = id => document.getElementById(id);
@@ -145,11 +145,12 @@
   function identityLook(g){const n=hashId(g.id);return [stablePick(HAIR,n),stablePick(FACE,n+1),stablePick(BODY,n+2),stablePick(SKIN,n+3),stablePick(EYES,n+4)].join(', ');}
 
   const REALISM = 'photorealistic, ultra realistic skin texture pores freckles, shot on iPhone 15 Pro Max, candid phone selfie, natural window light, mild film grain, no plastic skin, no AI look, real human woman';
+  const IDENTITY_LOCK = 'IDENTITY LOCK: preserve the exact same face and recognizable facial identity from the supplied profile reference image; same eyes, eyebrows, nose, lips, jawline, face proportions, skin tone, hair color and age; do not invent a different woman, do not randomize the face, do not substitute another person; vary only pose, expression, clothing, framing and environment.';
   const FULL = 'detailed face lips tongue, heavy natural breasts hard nipples, soft belly, full thighs long legs, bare feet when visible, fingers with nails, wet pussy detailed labia clitoris, round ass, visible anus';
 
   function buildPhotoPrompt(g, userPrompt, intensity) {
     const look = identityLook(g);
-    const base = 'Photorealistic smartphone photo of the same fictional adult woman '+g.name+', age '+g.age+', consistent facial identity, '+look+'. '+REALISM+'. Natural anatomy, realistic hands, realistic eyes, realistic hair strands, authentic camera imperfections, no plastic skin, no CGI, no illustration.';
+    const base = 'Photorealistic smartphone photo of the same fictional adult woman '+g.name+', age '+g.age+', consistent facial identity, '+look+'. '+IDENTITY_LOCK+' '+REALISM+'. Natural anatomy, realistic hands, realistic eyes, realistic hair strands, authentic camera imperfections, no plastic skin, no CGI, no illustration.';
     const up = (userPrompt||'').toLowerCase();
     let focus = '';
     if (/pied|pieds|orteils/.test(up)) focus += ', bare feet soles toes in focus';
@@ -172,7 +173,7 @@
 
   function dataUrlToBlob(data){const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(!m)throw Error('Image invalide');const bin=atob(m[2]),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new Blob([bytes],{type:m[1]})}
   async function referenceEdit(g,prompt,model,size){
-    const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:model==='flux'||model==='zimage'||model==='klein'?'kontext':model,prompt,images:[{image_url:g.photo}],size,n:1})});
+    const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:model==='flux'||model==='zimage'||model==='klein'?'kontext':model,prompt,images:[{image_url:g.photo}],,size,n:1})});
     const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data=null}
     if(!r.ok)throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
     const b64=data?.data?.[0]?.b64_json;if(!b64)throw Error('Image de référence absente');return URL.createObjectURL(dataUrlToBlob('data:image/png;base64,'+b64));
