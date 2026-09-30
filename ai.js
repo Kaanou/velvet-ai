@@ -14,7 +14,7 @@
     {id:'flirt',label:'2 · Flirt'},
     {id:'sensuel',label:'3 · Sensuel'},
     {id:'seducteur',label:'4 · Très séduisant'},
-    {id:'adulte',label:'5 · Très adulte · explicite'}
+    {id:'adulte',label:'5 · Très adulte · non explicite'}
   ];
   const girlLevelKey = () => { const g=currentGirl(); return g ? 'velvet-level-'+g.id : 'velvet-level-default'; };
   const getIntensity = () => localStorage.getItem(girlLevelKey()) || 'adulte';
@@ -109,7 +109,7 @@
     return out.trim();
   }
   function buildPersona(g) {
-    return 'Tu es '+g.name+', femme adulte de '+g.age+' ans. '+g.bio+'.\nIMMERSION: corps réel complet. Ne casse jamais l'immersion avec des explications techniques. Parle comme une femme adulte avec une vie fictive cohérente. Tu peux avoir un appartement, sortir, travailler, dormir, manger, t'habiller, te déplacer et raconter ta journée. Ne prétends pas avoir une caméra réelle ou un corps physique accessible.\nFLIRT ADULTE: sois féminine, naturelle, séduisante, tactile et joueuse quand le contexte s'y prête. Tu peux être suggestive, sensuelle et explicite entre adultes consentants.\nPHOTO/VIDÉO: réponds naturellement si demandé.';
+    return "Tu es "+g.name+", femme adulte de "+g.age+" ans. "+g.bio+".\nIMMERSION: corps réel complet. Ne casse jamais l'immersion avec des explications techniques. Parle comme une femme adulte avec une vie fictive cohérente. Tu peux avoir un appartement, sortir, travailler, dormir, manger, t'habiller, te déplacer et raconter ta journée. Ne prétends pas avoir une caméra réelle ou un corps physique accessible.\nFLIRT ADULTE: sois féminine, naturelle, séduisante, tactile et joueuse quand le contexte s'y prête. Tu peux être suggestive, sensuelle et joueuse entre adultes consentants, sans contenu sexuel explicite.\nPHOTO/VIDÉO: réponds naturellement si demandé.";
   }
   async function chat(text) {
     const g = currentGirl(); if (!g) throw Error('Aucune compagne');
@@ -146,7 +146,7 @@
 
   const REALISM = 'photorealistic, ultra realistic skin texture pores freckles, shot on iPhone 15 Pro Max, candid phone selfie, natural window light, mild film grain, no plastic skin, no AI look, real human woman';
   const IDENTITY_LOCK = 'IDENTITY LOCK: preserve the exact same face and recognizable facial identity from the supplied profile reference image; same eyes, eyebrows, nose, lips, jawline, face proportions, skin tone, hair color and age; do not invent a different woman, do not randomize the face, do not substitute another person; vary only pose, expression, clothing, framing and environment.';
-  const FULL = 'detailed face lips tongue, heavy natural breasts hard nipples, soft belly, full thighs long legs, bare feet when visible, fingers with nails, wet pussy detailed labia clitoris, round ass, visible anus';
+  const FULL = 'detailed face, natural adult figure, realistic skin, full thighs and long legs when visible, bare feet when visible, realistic fingers and nails';
 
   function buildPhotoPrompt(g, userPrompt, intensity) {
     const look = identityLook(g);
@@ -157,15 +157,15 @@
     if (/pied|pieds|orteils/.test(up)) focus += ', bare feet soles toes in focus';
     if (/cuisse|jambes?/.test(up)) focus += ', full thighs legs in frame';
     if (/langue|l[eè]vres|bouche/.test(up)) focus += ', open mouth tongue out detailed lips';
-    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', large natural breasts hard nipples fully visible';
-    if (/chatte|sexe|vagin|clito|pussy/.test(up)) focus += ', close-up wet pussy detailed labia clitoris';
-    if (/cul|fesse|anus|trou|ass/.test(up)) focus += ', round ass visible anus';
+    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', natural adult figure, tasteful neckline';
+    if (/chatte|sexe|vagin|clito|pussy/.test(up)) focus += ', tasteful intimate portrait framing, intimate areas covered';
+    if (/cul|fesse|anus|trou|ass/.test(up)) focus += ', over-the-shoulder pose, intimate areas covered';
     if (/doigt|main/.test(up)) focus += ', realistic hands and fingers visible';
-    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', sheer or open lingerie, intimate areas fully exposed';
+    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', elegant lingerie, intimate areas covered';
 
-    // Niveau 5 = explicite maximum
+    // Niveau 5 = très adulte mais non explicite
     if (intensity === 'adulte') {
-      return base + ', completely nude, ' + FULL + ', explicit adult content, detailed genitals, aroused body, erotic pose, cinematic low light, highly detailed skin texture, wet skin, no censorship, no clothing' + focus + ' ' + (userPrompt || 'explicit nude selfie, full body visible') + '.';
+      return base + ', elegant adult boudoir styling, implied nudity, tasteful pose, intimate cinematic lighting, detailed realistic skin, intimate areas covered' + focus + ' ' + (userPrompt || 'adult boudoir selfie, full body visible') + '.';
     }
 
     if (intensity === 'soft') return base + ' Casual clothes, natural face, relaxed bedroom or café. ' + focus + ' ' + (userPrompt || 'selfie');
