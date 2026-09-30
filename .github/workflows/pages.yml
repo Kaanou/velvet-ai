@@ -21,6 +21,8 @@ jobs:
         uses: actions/checkout@v4
       - name: Configurer Pages
         uses: actions/configure-pages@v5
+      - name: Vérifier la syntaxe JavaScript
+        run: node --check ai.js && node --check gallery.js && node --check gallery-ui.js && node --check ai-fix.js
       - name: Optimiser le site
         run: python3 scripts/upgrade.py
       - name: Préparer le site
