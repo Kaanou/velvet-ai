@@ -22,7 +22,7 @@
             +'&height='+encodeURIComponent(dims[1]||1024)
             +'&nologo=true'
             +(key?'&key='+encodeURIComponent(key):'');
-          return nativeFetch(editUrl,{method:'GET'});
+          const headers=new Headers(init.headers||{}); return nativeFetch(editUrl,{method:'GET',headers});
         }
       }
     }catch(e){console.warn('Velvet image adapter:',e);}
