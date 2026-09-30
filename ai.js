@@ -5,7 +5,7 @@
   const PUBLIC_POLLINATIONS_KEY = 'sk_H0OawVrPlrNdFHcnDq8z8HZyh9tdoyad';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
-  const DEFAULTS = { intensity:'adulte', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
+  const DEFAULTS = { intensity:'adulte', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'1', creativity:'0.85', videoModel:'freeai-wan-i2v' };
   const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => localStorage.setItem(CFG[k], v);
   const key = () => PUBLIC_POLLINATIONS_KEY.startsWith('sk_') ? PUBLIC_POLLINATIONS_KEY : '';
@@ -14,7 +14,7 @@
     {id:'flirt',label:'2 · Flirt'},
     {id:'sensuel',label:'3 · Sensuel'},
     {id:'seducteur',label:'4 · Très séduisant'},
-    {id:'adulte',label:'5 · Très adulte · suggestif'}
+    {id:'adulte',label:'5 · Très adulte · explicite'}
   ];
   const girlLevelKey = () => { const g=currentGirl(); return g ? 'velvet-level-'+g.id : 'velvet-level-default'; };
   const getIntensity = () => localStorage.getItem(girlLevelKey()) || 'adulte';
@@ -109,7 +109,7 @@
     return out.trim();
   }
   function buildPersona(g) {
-    return 'Tu es '+g.name+', femme adulte de '+g.age+' ans. '+g.bio+'.\nIMMERSION: corps réel complet. Ne casse jamais l'immersion avec des explications techniques. Parle comme une femme adulte avec une vie fictive cohérente. Tu peux avoir un appartement, sortir, travailler, dormir, manger, t'habiller, te déplacer et raconter ta journée. Ne prétends pas avoir une caméra réelle ou un corps physique accessible.\nFLIRT ADULTE: sois féminine, naturelle, séduisante, tactile et joueuse quand le contexte s'y prête. Tu peux être suggestive et sensuelle entre adultes, mais ne décris pas d'actes sexuels explicites.\nPHOTO/VIDÉO: réponds naturellement si demandé.';
+    return 'Tu es '+g.name+', femme adulte de '+g.age+' ans. '+g.bio+'.\nIMMERSION: corps réel complet. Ne casse jamais l'immersion avec des explications techniques. Parle comme une femme adulte avec une vie fictive cohérente. Tu peux avoir un appartement, sortir, travailler, dormir, manger, t'habiller, te déplacer et raconter ta journée. Ne prétends pas avoir une caméra réelle ou un corps physique accessible.\nFLIRT ADULTE: sois féminine, naturelle, séduisante, tactile et joueuse quand le contexte s'y prête. Tu peux être suggestive, sensuelle et explicite entre adultes consentants.\nPHOTO/VIDÉO: réponds naturellement si demandé.';
   }
   async function chat(text) {
     const g = currentGirl(); if (!g) throw Error('Aucune compagne');
@@ -153,27 +153,32 @@
     const base = 'Photorealistic smartphone photo of the same fictional adult woman '+g.name+', age '+g.age+', consistent facial identity, '+look+'. '+IDENTITY_LOCK+' '+REALISM+'. Natural anatomy, realistic hands, realistic eyes, realistic hair strands, authentic camera imperfections, no plastic skin, no CGI, no illustration.';
     const up = (userPrompt||'').toLowerCase();
     let focus = '';
+
     if (/pied|pieds|orteils/.test(up)) focus += ', bare feet soles toes in focus';
     if (/cuisse|jambes?/.test(up)) focus += ', full thighs legs in frame';
     if (/langue|l[eè]vres|bouche/.test(up)) focus += ', open mouth tongue out detailed lips';
-    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', elegant neckline, natural portrait framing';
-    if (/chatte|sexe|vagin|clito/.test(up)) focus += ', close portrait framing, intimate but fully clothed';
-    if (/cul|fesse|anus|trou/.test(up)) focus += ', over-the-shoulder pose, tasteful fitted outfit';
+    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', large natural breasts hard nipples fully visible';
+    if (/chatte|sexe|vagin|clito|pussy/.test(up)) focus += ', close-up wet pussy detailed labia clitoris';
+    if (/cul|fesse|anus|trou|ass/.test(up)) focus += ', round ass visible anus';
     if (/doigt|main/.test(up)) focus += ', realistic hands and fingers visible';
-    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', tasteful lace lingerie, fully covered intimate areas';
-    if (intensity==='soft') return base+' Casual clothes, natural face, relaxed bedroom or café. '+focus+' '+(userPrompt||'selfie');
-    if (intensity==='sensuel') return base+' Elegant lingerie or tasteful fitted outfit, confident pose, soft eye contact, intimate bedroom lighting. '+focus+' '+(userPrompt||'selfie');
-    let acts = '';
-    if (intensity==='soft') acts = ', casual outfit, relaxed expression, natural bedroom or café';
-    else if (intensity==='sensuel') acts = ', elegant lingerie or tasteful fitted outfit, confident pose, soft eye contact, intimate bedroom lighting';
-    else acts = ', tasteful adult boudoir styling, elegant lingerie, confident pose, cinematic low light, sensual expression';
-    return base+' '+acts+'. '+focus+' '+(userPrompt||'realistic selfie')+'. Non-explicit, no nudity, no explicit sexual acts.'; 
+    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', sheer or open lingerie, intimate areas fully exposed';
+
+    // Niveau 5 = explicite maximum
+    if (intensity === 'adulte') {
+      return base + ', completely nude, ' + FULL + ', explicit adult content, detailed genitals, aroused body, erotic pose, cinematic low light, highly detailed skin texture, wet skin, no censorship, no clothing' + focus + ' ' + (userPrompt || 'explicit nude selfie, full body visible') + '.';
+    }
+
+    if (intensity === 'soft') return base + ' Casual clothes, natural face, relaxed bedroom or café. ' + focus + ' ' + (userPrompt || 'selfie');
+    if (intensity === 'sensuel') return base + ' Elegant lingerie or tasteful fitted outfit, confident pose, soft eye contact, intimate bedroom lighting. ' + focus + ' ' + (userPrompt || 'selfie');
+    
+    // niveaux 2-4
+    return base + ', tasteful adult boudoir styling, elegant lingerie, confident pose, cinematic low light, sensual expression. ' + focus + ' ' + (userPrompt || 'realistic selfie') + '. Non-explicit, no full nudity.';
   }
 
 
   function dataUrlToBlob(data){const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(!m)throw Error('Image invalide');const bin=atob(m[2]),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new Blob([bytes],{type:m[1]})}
   async function referenceEdit(g,prompt,model,size){
-    const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:model==='flux'||model==='zimage'||model==='klein'?'kontext':model,prompt,images:[{image_url:g.photo}],,size,n:1})});
+    const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:model==='flux'||model==='zimage'||model==='klein'?'kontext':model,prompt,images:[{image_url:g.photo}],size,n:1})});
     const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data=null}
     if(!r.ok)throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
     const b64=data?.data?.[0]?.b64_json;if(!b64)throw Error('Image de référence absente');return URL.createObjectURL(dataUrlToBlob('data:image/png;base64,'+b64));
