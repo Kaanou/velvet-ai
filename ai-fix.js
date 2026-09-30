@@ -36,6 +36,68 @@
     setStatus(getKey()?'✓ Clé déjà enregistrée.':'Entre ta clé une fois.');
   }
 
+
+
+  async function safeReferenceEdit(g, context){
+    const src=await fetch(g.photo);
+    if(!src.ok) throw new Error('Image de référence inaccessible');
+    const blob=await src.blob();
+    const form=new FormData();
+    form.append('image',blob,'reference.jpg');
+    form.append('prompt',`Photographie smartphone photoréaliste d'une femme adulte fictive nommée ${g.name}, ${g.age} ans. Même identité visuelle que la photo de référence, visage cohérent, peau naturelle, cheveux réalistes, lumière naturelle, pose quotidienne, tenue adulte élégante, contenu non explicite. ${context}`);
+    form.append('model','kontext');
+    form.append('size','768x1024');
+    form.append('n','1');
+    const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{method:'POST',headers:{Authorization:'Bearer '+getKey()},body:form});
+    const raw=await r.text();let d=null;try{d=JSON.parse(raw)}catch{}
+    if(!r.ok) throw new Error('HTTP '+r.status+(d?.error?.message?' — '+d.error.message:''));
+    const b64=d?.data?.[0]?.b64_json;
+    if(!b64) throw new Error('Image générée absente');
+    const bin=atob(b64),bytes=new Uint8Array(bin.length);
+    for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);
+    return URL.createObjectURL(new Blob([bytes],{type:'image/png'}));
+  }
+
+  window.generatePhoto=async function(prompt=''){
+    const g=typeof current!=='undefined'&&current!==null?girls[current]:null;
+    if(!g)return;
+    const token=getKey();
+    if(!token){openPanel();return;}
+    addTyping();
+    try{
+      const src=await safeReferenceEdit(g,prompt||'selfie spontané du moment, cadrage naturel, expression détendue');
+      removeTyping();
+      history[g.id]=history[g.id]||[];
+      history[g.id].push({role:'ai',text:'📷',image:src});
+      save();renderMessages();
+    }catch(e){
+      removeTyping();
+      history[g.id]=history[g.id]||[];
+      history[g.id].push({role:'ai',text:'Erreur photo : '+(e.message||'génération refusée')});
+      save();renderMessages();
+    }
+  };
+
+  window.generateGalleryUrls=async function(){
+    const g=typeof current!=='undefined'&&current!==null?girls[current]:null;
+    const token=getKey();
+    if(!g)throw new Error('Aucune compagne');
+    if(!token){openPanel();throw new Error('IA non connectée');}
+    const contexts=[
+      'selfie de face dans une lumière matinale douce',
+      'selfie de trois-quarts dans un café',
+      'portrait smartphone en extérieur en fin de journée',
+      'photo miroir dans un intérieur quotidien',
+      'selfie assise avec un arrière-plan naturel',
+      'portrait spontané près d’une fenêtre'
+    ];
+    const out=[];
+    for(const context of contexts){
+      try{out.push(await safeReferenceEdit(g,context));}catch(e){console.warn(e);}
+    }
+    return out;
+  };
+
   window.openAI=openPanel;
   window.__velvetSend=async function(){
     const input=$('input'); const text=input?.value?.trim();
