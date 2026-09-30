@@ -1,54 +1,31 @@
-/* Velvet Safari image-edit compatibility layer */
+/* Safari-safe reference-image adapter.
+   The browser never fetches the reference image itself.
+   Pollinations fetches the public reference URL server-side. */
 (() => {
-  const nativeFetch = window.fetch.bind(window);
-
-  function bytesToBase64(bytes) {
-    let out = '';
-    const step = 0x8000;
-    for (let i = 0; i < bytes.length; i += step) {
-      out += String.fromCharCode(...bytes.subarray(i, i + step));
-    }
-    return btoa(out);
-  }
-
-  window.fetch = async function(input, init) {
-    try {
-      const reqUrl = typeof input === 'string' ? input : input?.url || '';
-      if (reqUrl.includes('/v1/images/edits') && init?.method === 'POST' &&
-          typeof init.body === 'string' && init.body.trim().startsWith('{')) {
-        const body = JSON.parse(init.body);
-        const ref = body?.images?.[0]?.image_url;
-        if (ref) {
-          const model = body.model || 'kontext';
-          const size = String(body.size || '768x1024').split('x');
-          const editUrl =
-            'https://gen.pollinations.ai/image/' + encodeURIComponent(body.prompt || 'Create a new photo') +
-            '?model=' + encodeURIComponent(model) +
-            '&image=' + encodeURIComponent(ref) +
-            '&width=' + encodeURIComponent(size[0] || '768') +
-            '&height=' + encodeURIComponent(size[1] || '1024') +
-            '&nologo=true';
-
-          const headers = new Headers(init.headers || {});
-          const r = await nativeFetch(editUrl, { method: 'GET', headers });
-          if (!r.ok) return r;
-
-          const blob = await r.blob();
-          if (!blob.type.startsWith('image/')) return r;
-
-          const bytes = new Uint8Array(await blob.arrayBuffer());
-          const b64 = bytesToBase64(bytes);
-          return new Response(JSON.stringify({
-            data: [{ b64_json: b64 }]
-          }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' }
-          });
+  const nativeFetch=window.fetch.bind(window);
+  window.fetch=async function(input,init){
+    try{
+      const u=typeof input==='string'?input:(input&&input.url)||'';
+      if(u.includes('/v1/images/edits') && init?.method==='POST'){
+        let body=null;
+        if(typeof init.body==='string') body=JSON.parse(init.body);
+        const ref=body?.images?.[0]?.image_url;
+        if(ref){
+          const model=body.model||'kontext';
+          const dims=String(body.size||'768x1024').split('x');
+          const prompt=body.prompt||'Create a new photorealistic portrait using the reference image.';
+          const key=(typeof PUBLIC_POLLINATIONS_KEY!=='undefined')?PUBLIC_POLLINATIONS_KEY:'';
+          const editUrl='https://gen.pollinations.ai/image/'+encodeURIComponent(prompt)
+            +'?model='+encodeURIComponent(model)
+            +'&image='+encodeURIComponent(ref)
+            +'&width='+encodeURIComponent(dims[0]||768)
+            +'&height='+encodeURIComponent(dims[1]||1024)
+            +'&nologo=true'
+            +(key?'&key='+encodeURIComponent(key):'');
+          return nativeFetch(editUrl,{method:'GET'});
         }
       }
-    } catch (e) {
-      console.warn('Velvet image compatibility:', e);
-    }
-    return nativeFetch(input, init);
+    }catch(e){console.warn('Velvet image adapter:',e);}
+    return nativeFetch(input,init);
   };
 })();
