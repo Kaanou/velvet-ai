@@ -2,7 +2,7 @@
   const KEY = 'velvet-pollinations-key';
   // GITHUB PAGES MODE: replace the placeholder with your Pollinations sk_ key.
   // WARNING: this key is public in a static site. Use only a limited-budget key.
-  const PUBLIC_POLLINATIONS_KEY = 'sk_H0OawVrPlrNdFHcnDq8z8HZyh9tdoyad';
+  const PUBLIC_POLLINATIONS_KEY = 'sk_7DhsuYdMIjTZtC7NCVRCafog84WwlYKg';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
   const DEFAULTS = { intensity:'adulte', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'1', creativity:'0.85', videoModel:'freeai-wan-i2v' };
@@ -178,26 +178,10 @@
 
   function dataUrlToBlob(data){const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(!m)throw Error('Image invalide');const bin=atob(m[2]),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new Blob([bytes],{type:m[1]})}
   async function referenceEdit(g,prompt,model,size){
-    if(!g?.photo) throw Error('Photo de référence absente');
-    const chosen=(model==='flux'||model==='zimage'||model==='klein')?'kontext':(model||'kontext');
-    const dims=String(size||'768x1024').split('x');
-    const params=new URLSearchParams({
-      model:chosen,
-      image:g.photo,
-      width:dims[0]||'768',
-      height:dims[1]||'1024',
-      nologo:'true',
-      key:PUBLIC_POLLINATIONS_KEY
-    });
-    const url='https://gen.pollinations.ai/image/'+encodeURIComponent(prompt)+'?'+params.toString();
-    const r=await fetch(url);
-    if(!r.ok){
-      const raw=await r.text().catch(()=>'');
-      throw Error('HTTP '+r.status+(raw?' — '+raw.slice(0,180):''));
-    }
-    const blob=await r.blob();
-    if(!blob.type.startsWith('image/')) throw Error('Réponse image invalide');
-    return URL.createObjectURL(blob);
+    const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:model==='flux'||model==='zimage'||model==='klein'?'kontext':model,prompt,images:[{image_url:g.photo}],size,n:1})});
+    const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data=null}
+    if(!r.ok)throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
+    const b64=data?.data?.[0]?.b64_json;if(!b64)throw Error('Image de référence absente');return URL.createObjectURL(dataUrlToBlob('data:image/png;base64,'+b64));
   }
   window.generateGallery = async function(){
     if(!key())return openAI('⚠️ Connecte l\'IA.'); const g=currentGirl();if(!g)return;
