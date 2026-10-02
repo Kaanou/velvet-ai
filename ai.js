@@ -178,11 +178,57 @@
 
   function dataUrlToBlob(data){const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(!m)throw Error('Image invalide');const bin=atob(m[2]),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new Blob([bytes],{type:m[1]})}
   async function referenceEdit(g,prompt,model,size){
-    const r=await fetch('https://gen.pollinations.ai/v1/images/edits',{method:'POST',headers:{Authorization:'Bearer '+key(),'Content-Type':'application/json'},body:JSON.stringify({model:model==='flux'||model==='zimage'||model==='klein'?'kontext':model,prompt,images:[{image_url:g.photo}],size,n:1})});
-    const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data=null}
-    if(!r.ok)throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
-    const b64=data?.data?.[0]?.b64_json;if(!b64)throw Error('Image de référence absente');return URL.createObjectURL(dataUrlToBlob('data:image/png;base64,'+b64));
+    if(!g?.photo) throw Error('Image de profil absente');
+    const selectedModel = model==='flux'||model==='zimage'||model==='klein' ? 'kontext' : (model || 'kontext');
+
+    // Pollinations attend désormais une vraie image en multipart pour /v1/images/edits.
+    // On transforme donc systématiquement la photo de profil en Blob avant l'envoi.
+    let sourceBlob;
+    try {
+      if(/^data:image\\//i.test(String(g.photo))) {
+        sourceBlob = dataUrlToBlob(g.photo);
+      } else {
+        const src = await fetch(g.photo, {mode:'cors'});
+        if(!src.ok) throw Error('Impossible de charger la photo de profil (HTTP '+src.status+')');
+        sourceBlob = await src.blob();
+      }
+    } catch(e) {
+      throw Error('Photo de référence inaccessible — '+(e.message||'URL invalide'));
+    }
+
+    if(!sourceBlob.type || !sourceBlob.type.startsWith('image/')) {
+      throw Error('La photo de profil n\'est pas une image exploitable');
+    }
+
+    const form = new FormData();
+    form.append('image', sourceBlob, 'profile-reference.'+(sourceBlob.type.split('/')[1]||'jpg').replace('jpeg','jpg'));
+    form.append('prompt', prompt);
+    form.append('model', selectedModel);
+    form.append('size', size || '768x1024');
+    form.append('n', '1');
+
+    const r = await fetch('https://gen.pollinations.ai/v1/images/edits', {
+      method:'POST',
+      headers:{Authorization:'Bearer '+key()},
+      body:form
+    });
+    const raw=await r.text(); let data; try{data=JSON.parse(raw)}catch{data=null}
+    if(!r.ok) {
+      const msg=data?.error?.message || raw?.slice(0,180) || '';
+      throw Error('HTTP '+r.status+(msg?' — '+msg:''));
+    }
+
+    // Pollinations peut renvoyer b64_json ou une URL selon le format de réponse.
+    const item=data?.data?.[0];
+    if(item?.b64_json) return URL.createObjectURL(dataUrlToBlob('data:image/png;base64,'+item.b64_json));
+    if(item?.url) {
+      const out=await fetch(item.url);
+      if(!out.ok) throw Error('Image générée inaccessible (HTTP '+out.status+')');
+      return URL.createObjectURL(await out.blob());
+    }
+    throw Error('Réponse image invalide — aucun b64_json ni URL retourné');
   }
+
   window.generateGallery = async function(){
     if(!key())return openAI('⚠️ Connecte l\'IA.'); const g=currentGirl();if(!g)return;
     const grid=$('galleryGrid');$('galleryModal').style.display='block';grid.innerHTML='<div style="color:#aaa;padding:20px">Création de 6 photos cohérentes…</div>';
