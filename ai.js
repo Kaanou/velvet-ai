@@ -5,7 +5,7 @@
   const PUBLIC_POLLINATIONS_KEY = 'sk_rs1x2fKZLGIFyEcatpez9OG5yGJayAKz';
   const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
   // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
-  const DEFAULTS = { intensity:'adulte', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'1', creativity:'0.85', videoModel:'freeai-wan-i2v' };
+  const DEFAULTS = { intensity:'adulte', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
   const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
   const set = (k,v) => localStorage.setItem(CFG[k], v);
   const key = () => PUBLIC_POLLINATIONS_KEY.startsWith('sk_') ? PUBLIC_POLLINATIONS_KEY : '';
@@ -144,35 +144,56 @@
   function stablePick(a,n){return a[n%a.length]}
   function identityLook(g){const n=hashId(g.id);return [stablePick(HAIR,n),stablePick(FACE,n+1),stablePick(BODY,n+2),stablePick(SKIN,n+3),stablePick(EYES,n+4)].join(', ');}
 
-  const REALISM = 'photorealistic, ultra realistic skin texture pores freckles, shot on iPhone 15 Pro Max, candid phone selfie, natural window light, mild film grain, no plastic skin, no AI look, real human woman';
+  const REALISM = 'photorealistic, ultra realistic skin texture pores and natural imperfections, believable smartphone camera optics, candid iPhone-style photography, natural window or ambient light, mild film grain, no plastic skin, no CGI, no illustration, no beauty-filter look';
   const IDENTITY_LOCK = 'IDENTITY LOCK: preserve the exact same face and recognizable facial identity from the supplied profile reference image; same eyes, eyebrows, nose, lips, jawline, face proportions, skin tone, hair color and age; do not invent a different woman, do not randomize the face, do not substitute another person; vary only pose, expression, clothing, framing and environment.';
   const FULL = 'detailed face, natural adult figure, realistic skin, full thighs and long legs when visible, bare feet when visible, realistic fingers and nails';
 
   function buildPhotoPrompt(g, userPrompt, intensity) {
     const look = identityLook(g);
-    const base = 'Photorealistic smartphone photo of the same fictional adult woman '+g.name+', age '+g.age+', consistent facial identity, '+look+'. '+IDENTITY_LOCK+' '+REALISM+'. Natural anatomy, realistic hands, realistic eyes, realistic hair strands, authentic camera imperfections, no plastic skin, no CGI, no illustration.';
+    const base = 'Photorealistic smartphone photo of the SAME fictional adult woman '+g.name+', age '+g.age+', '+look+'. '+IDENTITY_LOCK+' '+REALISM+'. Keep her recognizable identity fixed across every generation. Natural adult anatomy, realistic hands, realistic eyes, realistic hair strands, authentic camera imperfections.';
+
     const up = (userPrompt||'').toLowerCase();
     let focus = '';
+    if (/selfie|photo|portrait/.test(up)) focus += ', candid selfie composition';
+    if (/miroir|mirror/.test(up)) focus += ', realistic mirror selfie with believable reflection and phone';
+    if (/plage|mer|beach/.test(up)) focus += ', beach setting, warm daylight, natural vacation atmosphere';
+    if (/nuit|soir|night/.test(up)) focus += ', evening or night setting, cinematic ambient light';
+    if (/lit|bed|chambre|bedroom/.test(up)) focus += ', private bedroom setting, tasteful intimate atmosphere';
+    if (/douche|shower|bain|bath/.test(up)) focus += ', bathroom setting, wrapped towel or robe, tasteful composition';
+    if (/sport|gym|fitness/.test(up)) focus += ', realistic athletic setting and casual sportswear';
+    if (/voyage|hotel|hôtel/.test(up)) focus += ', hotel or travel setting, spontaneous vacation snapshot';
+    if (/robe|dress/.test(up)) focus += ', elegant fitted dress';
+    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', elegant lingerie, non-explicit boudoir styling';
+    if (/jambes?|cuisse/.test(up)) focus += ', natural full-body or three-quarter framing';
+    if (/pieds|orteils/.test(up)) focus += ', realistic feet only if naturally visible';
+    if (/l[eè]vres|bouche/.test(up)) focus += ', expressive face and natural lips';
+    if (/main|doigt/.test(up)) focus += ', hands clearly visible and anatomically correct';
 
-    if (/pied|pieds|orteils/.test(up)) focus += ', bare feet soles toes in focus';
-    if (/cuisse|jambes?/.test(up)) focus += ', full thighs legs in frame';
-    if (/langue|l[eè]vres|bouche/.test(up)) focus += ', open mouth tongue out detailed lips';
-    if (/sein|t[eé]ton|poitrine/.test(up)) focus += ', natural adult figure, tasteful neckline';
-    if (/chatte|sexe|vagin|clito|pussy/.test(up)) focus += ', tasteful intimate portrait framing, intimate areas covered';
-    if (/cul|fesse|anus|trou|ass/.test(up)) focus += ', over-the-shoulder pose, intimate areas covered';
-    if (/doigt|main/.test(up)) focus += ', realistic hands and fingers visible';
-    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', elegant lingerie, intimate areas covered';
+    const variants = [
+      'casual morning selfie at home',
+      'late-night mirror selfie before going out',
+      'hotel-room selfie after getting ready',
+      'sunset balcony selfie',
+      'cozy oversized-shirt selfie',
+      'elegant evening outfit in a dim restaurant',
+      'beach vacation selfie in natural daylight',
+      'post-workout selfie in realistic sportswear',
+      'rainy-day street selfie under city lights',
+      'bathroom mirror selfie wearing a robe',
+      'bedroom selfie with soft morning light',
+      'weekend café selfie with a candid expression'
+    ];
+    const variant = variants[Math.floor(Math.random()*variants.length)];
 
-    // Niveau 5 = très adulte mais non explicite
-    if (intensity === 'adulte') {
-      return base + ', elegant adult boudoir styling, implied nudity, tasteful pose, intimate cinematic lighting, detailed realistic skin, intimate areas covered' + focus + ' ' + (userPrompt || 'adult boudoir selfie, full body visible') + '.';
-    }
+    let style = 'adult, confident, playful, spontaneous, sensual but non-explicit, believable real-life moment';
+    if (intensity === 'soft') style = 'casual, natural, relaxed, everyday adult moment';
+    if (intensity === 'flirt') style = 'flirty, playful, attractive, natural adult moment';
+    if (intensity === 'sensuel') style = 'sensual, confident, elegant, tasteful adult boudoir mood';
+    if (intensity === 'seducteur') style = 'very seductive, confident, glamorous, tasteful adult boudoir mood';
+    if (intensity === 'adulte') style = 'bold adult boudoir mood, implied intimacy, confident and provocative styling, tasteful and non-explicit';
 
-    if (intensity === 'soft') return base + ' Casual clothes, natural face, relaxed bedroom or café. ' + focus + ' ' + (userPrompt || 'selfie');
-    if (intensity === 'sensuel') return base + ' Elegant lingerie or tasteful fitted outfit, confident pose, soft eye contact, intimate bedroom lighting. ' + focus + ' ' + (userPrompt || 'selfie');
-    
-    // niveaux 2-4
-    return base + ', tasteful adult boudoir styling, elegant lingerie, confident pose, cinematic low light, sensual expression. ' + focus + ' ' + (userPrompt || 'realistic selfie') + '. Non-explicit, no full nudity.';
+    return base + ', '+variant+', '+style+focus+'. '+(userPrompt || 'spontaneous realistic selfie')+
+      '. Preserve the same face and identity. Change only pose, expression, outfit, framing, lighting and environment. No random replacement person, no face morphing, no duplicate face, no extra fingers, no distorted anatomy, no explicit sexual act, no graphic sexual content.';
   }
 
 
