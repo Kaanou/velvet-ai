@@ -181,52 +181,27 @@
     if(!g?.photo) throw Error('Image de profil absente');
     const selectedModel = model==='flux'||model==='zimage'||model==='klein' ? 'kontext' : (model || 'kontext');
 
-    // Pollinations attend désormais une vraie image en multipart pour /v1/images/edits.
-    // On transforme donc systématiquement la photo de profil en Blob avant l'envoi.
-    let sourceBlob;
-    try {
-      if(/^data:image\\//i.test(String(g.photo))) {
-        sourceBlob = dataUrlToBlob(g.photo);
-      } else {
-        const src = await fetch(g.photo, {mode:'cors'});
-        if(!src.ok) throw Error('Impossible de charger la photo de profil (HTTP '+src.status+')');
-        sourceBlob = await src.blob();
-      }
-    } catch(e) {
-      throw Error('Photo de référence inaccessible — '+(e.message||'URL invalide'));
-    }
+    // Ne pas télécharger la photo dans Safari : Pollinations accepte directement
+    // une URL d'image de référence via le paramètre "image". Cela évite les
+    // erreurs CORS/Safari et conserve la photo de profil comme référence.
+    const params = new URLSearchParams();
+    params.set('model', selectedModel);
+    const dims = String(size || '768x1024').split('x');
+    params.set('width', dims[0] || '768');
+    params.set('height', dims[1] || '1024');
+    params.set('nologo', 'true');
+    params.set('safe', 'false');
+    params.set('image', String(g.photo));
 
-    if(!sourceBlob.type || !sourceBlob.type.startsWith('image/')) {
-      throw Error('La photo de profil n\'est pas une image exploitable');
+    const url = 'https://gen.pollinations.ai/image/' + encodeURIComponent(prompt || 'Photorealistic selfie of the same adult woman') + '?' + params.toString();
+    const r = await fetch(url, {headers:{Authorization:'Bearer '+key()}});
+    if(!r.ok){
+      const raw = await r.text().catch(()=> '');
+      throw Error('HTTP '+r.status+(raw?' — '+raw.slice(0,180):''));
     }
-
-    const form = new FormData();
-    form.append('image', sourceBlob, 'profile-reference.'+(sourceBlob.type.split('/')[1]||'jpg').replace('jpeg','jpg'));
-    form.append('prompt', prompt);
-    form.append('model', selectedModel);
-    form.append('size', size || '768x1024');
-    form.append('n', '1');
-
-    const r = await fetch('https://gen.pollinations.ai/v1/images/edits', {
-      method:'POST',
-      headers:{Authorization:'Bearer '+key()},
-      body:form
-    });
-    const raw=await r.text(); let data; try{data=JSON.parse(raw)}catch{data=null}
-    if(!r.ok) {
-      const msg=data?.error?.message || raw?.slice(0,180) || '';
-      throw Error('HTTP '+r.status+(msg?' — '+msg:''));
-    }
-
-    // Pollinations peut renvoyer b64_json ou une URL selon le format de réponse.
-    const item=data?.data?.[0];
-    if(item?.b64_json) return URL.createObjectURL(dataUrlToBlob('data:image/png;base64,'+item.b64_json));
-    if(item?.url) {
-      const out=await fetch(item.url);
-      if(!out.ok) throw Error('Image générée inaccessible (HTTP '+out.status+')');
-      return URL.createObjectURL(await out.blob());
-    }
-    throw Error('Réponse image invalide — aucun b64_json ni URL retourné');
+    const blob = await r.blob();
+    if(!blob.type || !blob.type.startsWith('image/')) throw Error('Réponse image invalide');
+    return URL.createObjectURL(blob);
   }
 
   window.generateGallery = async function(){
