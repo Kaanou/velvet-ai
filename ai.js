@@ -1,267 +1,223 @@
+/* Velvet AI — single media engine
+   One path: profile reference -> image -> video.
+   Keep the UI simple; the existing page provides current/girls/history/save/renderMessages.
+*/
 (() => {
-  const KEY = 'velvet-pollinations-key';
-  // GITHUB PAGES MODE: replace the placeholder with your Pollinations sk_ key.
-  // WARNING: this key is public in a static site. Use only a limited-budget key.
-  const PUBLIC_POLLINATIONS_KEY = 'sk_rs1x2fKZLGIFyEcatpez9OG5yGJayAKz';
-  const CFG = { intensity:'velvet-photo-intensity', chatModel:'velvet-chat-model', imageModel:'velvet-image-model', imageSize:'velvet-image-size', forceNude:'velvet-force-nude', creativity:'velvet-creativity', videoModel:'velvet-video-model' };
-  // zimage = meilleur réalisme peaux / NSFW sans filtre côté Pollinations
-  const DEFAULTS = { intensity:'adulte', chatModel:'openai', imageModel:'kontext', imageSize:'768x1024', forceNude:'0', creativity:'0.85', videoModel:'freeai-wan-i2v' };
-  const get = k => localStorage.getItem(CFG[k]) || DEFAULTS[k];
-  const set = (k,v) => localStorage.setItem(CFG[k], v);
-  const key = () => PUBLIC_POLLINATIONS_KEY.startsWith('sk_') ? PUBLIC_POLLINATIONS_KEY : '';
-  const LEVELS = [
-    {id:'soft',label:'1 · Doux'},
-    {id:'flirt',label:'2 · Flirt'},
-    {id:'sensuel',label:'3 · Sensuel'},
-    {id:'seducteur',label:'4 · Très séduisant'},
-    {id:'adulte',label:'5 · Très adulte · non explicite'}
-  ];
-  const girlLevelKey = () => { const g=currentGirl(); return g ? 'velvet-level-'+g.id : 'velvet-level-default'; };
-  const getIntensity = () => localStorage.getItem(girlLevelKey()) || 'adulte';
-  const setIntensity = v => localStorage.setItem(girlLevelKey(), v);
-  const currentGirl = () => (typeof current !== 'undefined' && current !== null) ? girls[current] : null;
-  const $ = id => document.getElementById(id);
-  const CHAT_MODELS = [
-    {id:'openai-fast',label:'OpenAI Fast'},
-    {id:'openai',label:'OpenAI'},
-    {id:'gpt-5.6-luna',label:'GPT-5.6 Luna'},
-    {id:'mistralai/mistral-small-4',label:'Mistral Small'}
-  ];
-  // Modèles image sans filtre Azure sur Pollinations (self-hosted)
-  const IMAGE_MODELS = [
-    {id:'kontext',label:'★ Kontext · référence visage'},
-    {id:'flux',label:'Flux · photoréaliste'},
-    {id:'zimage',label:'Z-Image · rapide'},
-    {id:'gptimage',label:'GPT Image · haute fidélité'},
-    {id:'klein',label:'Flux Klein · rapide'}
-  ];
-  const VIDEO_MODELS = [{id:'wan-fast',label:'Wan Fast · vidéo · Pollinations'},{id:'wan',label:'Wan · qualité · Pollinations'} ,{id:'freeai-wan-i2v',label:'Free.ai · Wan I2V · quota gratuit'}];
-  const SIZES = [
-    {id:'512x768',label:'Petit (rapide)'},
-    {id:'768x1024',label:'Standard'},
-    {id:'1024x1280',label:'HD'}
-  ];
-
-  const btn = document.getElementById('aiKeyButton') || document.createElement('button');
-  btn.id='aiKeyButton';
-  btn.textContent='IA';
-  btn.title='Connecter l’IA';
-  btn.setAttribute('aria-label','Connecter l’IA');
-  btn.style.cssText='border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:7px 10px;font-weight:800;font-size:11px;line-height:1;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;min-width:38px;height:34px';
-  if (!document.getElementById('aiKeyButton')) {
-    btn.style.position='fixed'; btn.style.zIndex='9999'; btn.style.top='calc(12px + env(safe-area-inset-top))'; btn.style.right='12px'; document.body.appendChild(btn);
-  }
-  const box = document.createElement('div');
-  box.style.cssText = 'display:none;position:fixed;z-index:10002;inset:0;background:#000b;align-items:flex-end;justify-content:center;padding:12px';
-  box.innerHTML = '<div style="width:min(520px,100%);background:#151314;border:1px solid #302b2d;border-radius:22px;padding:18px"><div style="display:flex;justify-content:space-between"><b style="font-size:18px">🧠 Connecter l\'IA</b><button id="vx" style="border:0;background:none;color:#aaa;font-size:28px">×</button></div><p style="color:#aaa;font-size:12px">Clé API Pollinations — mémorisée uniquement sur cet appareil.</p><input id="vk" type="password" placeholder="Clé API…" style="width:100%;height:50px;border:1px solid #383235;background:#0d0d0d;color:#fff;border-radius:13px;padding:0 13px"><div style="display:flex;gap:8px;margin-top:10px"><button id="testk" style="flex:1;border:1px solid #383235;background:#211f20;color:#fff;border-radius:13px;padding:12px;font-weight:800">Tester</button><button id="savek" style="flex:1;border:0;background:#ef4444;color:#fff;border-radius:13px;padding:12px;font-weight:800">Activer</button></div><button id="delk" style="width:100%;margin-top:8px;border:1px solid #383235;background:#1c1a1b;color:#aaa;border-radius:13px;padding:10px">Effacer</button><div id="ks" style="font-size:11px;color:#777;margin-top:10px"></div></div>';
-  document.body.appendChild(box);
-  const vk = box.querySelector('#vk'), ks = box.querySelector('#ks');
-  const status = m => { ks.textContent = m || (key() ? '✓ IA automatique.' : '⚠️ Clé à configurer dans ai.js'); btn.textContent=key()?'IA ✓':'IA'; btn.style.borderColor=key()?'#ef4444':'#302b2d'; };
-  const openAI = m => { box.style.display = 'flex'; status(m); setTimeout(() => vk.focus(), 50); };
-  window.openAI = openAI;
-  btn.onclick = () => { if(!key()) return status('⚠️ Ajoute la clé Pollinations dans ai.js.'); status('✓ IA automatique.'); };
-  status();
-  box.querySelector('#vx').onclick = () => box.style.display = 'none';
-  box.querySelector('#savek').onclick = () => { status(key() ? '✓ IA automatique.' : '⚠️ Clé absente.'); box.style.display = 'none'; };
-  box.querySelector('#delk').onclick = () => { status('La clé est intégrée au code de Velvet.'); };
-  box.querySelector('#testk').onclick = async () => { status('Test du moteur…'); try { const r = await request(key(), [{role:'user',content:'Réponds uniquement OK'}], 8); status(r ? '✓ IA opérationnelle.' : '✕ Réponse vide'); } catch(e) { status('✕ '+e.message); } };
-
-  function injectMenu() {
-    const settings = document.getElementById('settings');
-    if (!settings || document.getElementById('velvet-adv-menu')) return;
-    const div = document.createElement('div');
-    div.id = 'velvet-adv-menu';
-    div.style.cssText = 'margin:8px 0;padding-top:8px;border-top:1px solid #302b2d';
-    const opt = (list, cur) => list.map(m => '<option value="'+m.id+'" '+(m.id===cur?'selected':'')+'>'+m.label+'</option>').join('');
-    const girl = currentGirl();
-    const girlName = girl?.name || 'Cette compagne';
-    div.innerHTML = '<div style="font-size:11px;color:#999;margin-bottom:6px;font-weight:700">Niveau de séduction · '+girlName+'</div><div style="font-size:10px;color:#666;margin-bottom:8px">Réglage individuel. Le niveau 5 est disponible directement.</div><div style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px">'+LEVELS.map(x=>'<button data-level="'+x.id+'" class="v-lvl" style="text-align:left;border:1px solid #383235;background:#1b191a;color:#ddd;border-radius:10px;padding:8px;font-size:12px">'+x.label+'</button>').join('')+'</div><div style="font-size:11px;color:#999;margin:8px 0 6px;font-weight:700">⚙ Avancé</div><label style="font-size:10px;color:#888">Modèle chat</label><select id="v-chat" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(CHAT_MODELS,get('chatModel'))+'</select><label style="font-size:10px;color:#888">Modèle image</label><select id="v-img" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;color:#ddd;border-radius:8px;padding:7px;font-size:11px">'+opt(IMAGE_MODELS,get('imageModel'))+'</select><label style="font-size:10px;color:#888">Vidéo</label><select id="v-video" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(VIDEO_MODELS,get('videoModel'))+'</select><label style="font-size:10px;color:#888">Taille</label><select id="v-size" style="width:100%;margin:4px 0 8px;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:7px;font-size:11px">'+opt(SIZES,get('imageSize'))+'</select><div id="v-st" style="font-size:10px;color:#777;margin-top:6px"></div>';
-    settings.insertBefore(div, settings.firstChild);
-    const hl = () => { const lvl = getIntensity(); div.querySelectorAll('.v-lvl').forEach(b => { b.style.borderColor = b.dataset.level===lvl?'#ef4444':'#383235'; b.style.background = b.dataset.level===lvl?'#2a1515':'#1b191a'; }); document.getElementById('v-st').textContent = get('chatModel').split('/').pop()+' · '+get('imageModel'); };
-    div.querySelectorAll('.v-lvl').forEach(b => b.onclick = () => { setIntensity(b.dataset.level); hl(); });
-    document.getElementById('v-chat').onchange = e => { set('chatModel', e.target.value); hl(); };
-    document.getElementById('v-img').onchange = e => { set('imageModel', e.target.value); hl(); };
-    document.getElementById('v-video').onchange = e => { set('videoModel', e.target.value); hl(); }; document.getElementById('v-size').onchange = e => { set('imageSize', e.target.value); hl(); };
-    
-    hl();
-  }
-  try {
-    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => { try { injectMenu(); } catch(e) { console.warn('Velvet settings menu:', e); } });
-    else injectMenu();
-  } catch(e) { console.warn('Velvet settings menu:', e); }
-  const ot = window.toggleSettings;
-  window.toggleSettings = function() {
-    if (typeof ot==='function') ot();
-    setTimeout(() => { try { injectMenu(); } catch(e) { console.warn('Velvet settings menu:', e); } }, 40);
+  const CFG = {
+    key: 'velvet-pollinations-key',
+    model: 'velvet-image-model',
+    video: 'velvet-video-model',
+    size: 'velvet-image-size',
+    levelPrefix: 'velvet-level-'
   };
 
-  async function request(token, messages, maxTokens=450) {
-    const model = get('chatModel') || 'openai-fast';
-    const r = await fetch('https://gen.pollinations.ai/v1/chat/completions', {
-      method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+token},
-      body:JSON.stringify({model,messages,max_tokens:maxTokens})
-    });
-    const raw=await r.text(); let data; try{data=JSON.parse(raw)}catch{data=null}
-    if(!r.ok) throw Error('HTTP '+r.status+(data?.error?.message?' — '+data.error.message:''));
-    const out=data?.choices?.[0]?.message?.content;
-    if(typeof out!=='string'||!out.trim()) throw Error('Réponse vide');
-    return out.trim();
+  // Static GitHub Pages fallback. Prefer a server-side secret in production.
+  const PUBLIC_KEY = 'sk_rs1x2fKZLGIFyEcatpez9OG5yGJayAKz';
+  const apiKey = () => PUBLIC_KEY.startsWith('sk_') ? PUBLIC_KEY : (localStorage.getItem(CFG.key) || '');
+
+  const imageModel = () => localStorage.getItem(CFG.model) || 'kontext';
+  const videoModel = () => localStorage.getItem(CFG.video) || 'alibaba/wan-2.2-fast';
+  const size = () => localStorage.getItem(CFG.size) || '768x1024';
+
+  const currentGirl = () =>
+    (typeof current !== 'undefined' && current !== null && typeof girls !== 'undefined')
+      ? girls[current] : null;
+
+  const level = g => localStorage.getItem(CFG.levelPrefix + g.id) || 'adulte';
+
+  function addResult(g, item) {
+    history[g.id] = history[g.id] || [];
+    history[g.id].push(item);
+    save();
+    renderMessages();
   }
-  function buildPersona(g) {
-    return "Tu es "+g.name+", femme adulte de "+g.age+" ans. "+g.bio+".\nIMMERSION: corps réel complet. Ne casse jamais l'immersion avec des explications techniques. Parle comme une femme adulte avec une vie fictive cohérente. Tu peux avoir un appartement, sortir, travailler, dormir, manger, t'habiller, te déplacer et raconter ta journée. Ne prétends pas avoir une caméra réelle ou un corps physique accessible.\nFLIRT ADULTE: sois féminine, naturelle, séduisante, tactile et joueuse quand le contexte s'y prête. Tu peux être suggestive, sensuelle et joueuse entre adultes consentants, sans contenu sexuel explicite.\nPHOTO/VIDÉO: réponds naturellement si demandé.";
+
+  function fail(g, kind, e) {
+    removeTyping();
+    addResult(g, {role:'ai', text:'Erreur '+kind+': '+(e?.message || 'indisponible')});
   }
-  async function chat(text) {
-    const g = currentGirl(); if (!g) throw Error('Aucune compagne');
-    const h = history[g.id] || [];
-    const messages = [{role:'system',content:buildPersona(g)}, ...h.slice(-18).filter(m=>m.role==='me'||m.role==='ai').map(m=>({role:m.role==='ai'?'assistant':'user',content:m.text})), {role:'user',content:text}];
-    return request(key(), messages, 450);
-  }
-  const photoIntent = t => /\b(selfie|photo|photographie|image|portrait|montre[- ]moi|envoie[- ]moi)\b/i.test(t);
-  const videoIntent = t => /\b(vid[eé]o|clip|film[- ]toi|filme[- ]toi)\b/i.test(t);
 
-  window.__velvetSend = async function() {
-    if (!key()) return openAI('⚠️ Connecte l\'IA.');
-    const input = $('input'); const text = input?.value?.trim();
-    if (!text || current === null) return;
-    const g = currentGirl(); input.value = '';
-    history[g.id] = history[g.id] || []; history[g.id].push({role:'me',text}); save(); renderMessages();
-    if (videoIntent(text)) { await window.generateVideo(text); return; }
-    if (photoIntent(text)) { await window.generatePhoto(text); return; }
-    addTyping();
-    try { const reply = await chat(text); removeTyping(); history[g.id].push({role:'ai',text:reply||'…'}); save(); renderMessages(); }
-    catch(e) { removeTyping(); history[g.id].push({role:'ai',text:'Bug: '+(e.message||'réessaie')}); save(); renderMessages(); console.error(e); }
-  };
-  window.send = window.__velvetSend;
+  function promptFor(g, userPrompt, kind) {
+    const lvl = level(g);
+    const intensity = {
+      soft: 'casual and natural',
+      flirt: 'playful and flirty',
+      sensuel: 'sensual and elegant',
+      seducteur: 'very seductive and glamorous',
+      adulte: 'bold adult boudoir mood, provocative but non-explicit'
+    }[lvl] || 'sensual and elegant';
 
-  const HAIR=['long wavy blonde hair','long straight black hair','shoulder-length brown hair','curly auburn hair','short pixie cut','long dark hair with bangs','platinum blonde','chestnut waves','black bob','messy brown bun','long red hair','dark curly hair'];
-  const FACE=['soft oval face','sharp cheekbones','round youthful face','heart-shaped face','high cheekbones full lips','delicate features','freckled face','almond eyes'];
-  const BODY=['slim athletic','curvy hourglass','petite slim','voluptuous curves','lean toned','soft natural','tall slender','short curvy'];
-  const SKIN=['fair skin','light olive','tanned','medium brown','pale freckled','golden','warm beige'];
-  const EYES=['blue eyes','green eyes','brown eyes','hazel eyes','dark brown eyes','grey-blue eyes'];
-  const pick = a => a[Math.floor(Math.random()*a.length)];
-  function hashId(id){let h=0;for(let i=0;i<String(id).length;i++)h=((h<<5)-h)+String(id).charCodeAt(i)|0;return Math.abs(h)}
-  function stablePick(a,n){return a[n%a.length]}
-  function identityLook(g){const n=hashId(g.id);return [stablePick(HAIR,n),stablePick(FACE,n+1),stablePick(BODY,n+2),stablePick(SKIN,n+3),stablePick(EYES,n+4)].join(', ');}
-
-  const REALISM = 'photorealistic, ultra realistic skin texture pores and natural imperfections, believable smartphone camera optics, candid iPhone-style photography, natural window or ambient light, mild film grain, no plastic skin, no CGI, no illustration, no beauty-filter look';
-  const IDENTITY_LOCK = 'IDENTITY LOCK: preserve the exact same face and recognizable facial identity from the supplied profile reference image; same eyes, eyebrows, nose, lips, jawline, face proportions, skin tone, hair color and age; do not invent a different woman, do not randomize the face, do not substitute another person; vary only pose, expression, clothing, framing and environment.';
-  const FULL = 'detailed face, natural adult figure, realistic skin, full thighs and long legs when visible, bare feet when visible, realistic fingers and nails';
-
-  function buildPhotoPrompt(g, userPrompt, intensity) {
-    const look = identityLook(g);
-    const base = 'Photorealistic smartphone photo of the SAME fictional adult woman '+g.name+', age '+g.age+', '+look+'. '+IDENTITY_LOCK+' '+REALISM+'. Keep her recognizable identity fixed across every generation. Natural adult anatomy, realistic hands, realistic eyes, realistic hair strands, authentic camera imperfections.';
-
-    const up = (userPrompt||'').toLowerCase();
-    let focus = '';
-    if (/selfie|photo|portrait/.test(up)) focus += ', candid selfie composition';
-    if (/miroir|mirror/.test(up)) focus += ', realistic mirror selfie with believable reflection and phone';
-    if (/plage|mer|beach/.test(up)) focus += ', beach setting, warm daylight, natural vacation atmosphere';
-    if (/nuit|soir|night/.test(up)) focus += ', evening or night setting, cinematic ambient light';
-    if (/lit|bed|chambre|bedroom/.test(up)) focus += ', private bedroom setting, tasteful intimate atmosphere';
-    if (/douche|shower|bain|bath/.test(up)) focus += ', bathroom setting, wrapped towel or robe, tasteful composition';
-    if (/sport|gym|fitness/.test(up)) focus += ', realistic athletic setting and casual sportswear';
-    if (/voyage|hotel|hôtel/.test(up)) focus += ', hotel or travel setting, spontaneous vacation snapshot';
-    if (/robe|dress/.test(up)) focus += ', elegant fitted dress';
-    if (/lingerie|soutien|string|culotte/.test(up)) focus += ', elegant lingerie, non-explicit boudoir styling';
-    if (/jambes?|cuisse/.test(up)) focus += ', natural full-body or three-quarter framing';
-    if (/pieds|orteils/.test(up)) focus += ', realistic feet only if naturally visible';
-    if (/l[eè]vres|bouche/.test(up)) focus += ', expressive face and natural lips';
-    if (/main|doigt/.test(up)) focus += ', hands clearly visible and anatomically correct';
+    const base =
+      'Photorealistic smartphone photo/video of the SAME fictional adult woman '+g.name+
+      ', age '+g.age+'. Preserve the exact recognizable face from the supplied profile reference: same eyes, eyebrows, nose, lips, jawline, face proportions, skin tone, hair and apparent age. '+
+      'Do not invent a different person. Realistic skin texture, natural imperfections, believable hands and anatomy, authentic phone-camera optics, natural lighting, no illustration, no CGI, no beauty-filter look. '+
+      intensity+'. ';
 
     const variants = [
-      'casual morning selfie at home',
-      'late-night mirror selfie before going out',
-      'hotel-room selfie after getting ready',
+      'candid selfie at home',
+      'mirror selfie before going out',
+      'hotel-room selfie while getting ready',
       'sunset balcony selfie',
-      'cozy oversized-shirt selfie',
-      'elegant evening outfit in a dim restaurant',
-      'beach vacation selfie in natural daylight',
+      'beach vacation selfie',
+      'night city selfie under ambient lights',
+      'cozy bedroom selfie in morning light',
+      'café selfie during a weekend outing',
       'post-workout selfie in realistic sportswear',
-      'rainy-day street selfie under city lights',
-      'bathroom mirror selfie wearing a robe',
-      'bedroom selfie with soft morning light',
-      'weekend café selfie with a candid expression'
+      'elegant evening outfit at a restaurant',
+      'rainy street selfie at night',
+      'bathroom mirror selfie wearing a robe'
     ];
     const variant = variants[Math.floor(Math.random()*variants.length)];
 
-    let style = 'adult, confident, playful, spontaneous, sensual but non-explicit, believable real-life moment';
-    if (intensity === 'soft') style = 'casual, natural, relaxed, everyday adult moment';
-    if (intensity === 'flirt') style = 'flirty, playful, attractive, natural adult moment';
-    if (intensity === 'sensuel') style = 'sensual, confident, elegant, tasteful adult boudoir mood';
-    if (intensity === 'seducteur') style = 'very seductive, confident, glamorous, tasteful adult boudoir mood';
-    if (intensity === 'adulte') style = 'bold adult boudoir mood, implied intimacy, confident and provocative styling, tasteful and non-explicit';
+    let extra = '';
+    const q = String(userPrompt || '').toLowerCase();
+    if (/miroir|mirror/.test(q)) extra += ' realistic mirror reflection and phone visible.';
+    if (/plage|mer|beach/.test(q)) extra += ' natural beach vacation atmosphere.';
+    if (/nuit|soir|night/.test(q)) extra += ' cinematic night ambience.';
+    if (/hôtel|hotel/.test(q)) extra += ' realistic hotel room.';
+    if (/sport|gym|fitness/.test(q)) extra += ' realistic sportswear and athletic setting.';
+    if (/robe|dress/.test(q)) extra += ' elegant fitted dress.';
+    if (/lingerie|soutien|culotte/.test(q)) extra += ' tasteful non-explicit lingerie styling.';
+    if (/plein pied|full body|jambes/.test(q)) extra += ' three-quarter or full-body framing with natural proportions.';
 
-    return base + ', '+variant+', '+style+focus+'. '+(userPrompt || 'spontaneous realistic selfie')+
-      '. Preserve the same face and identity. Change only pose, expression, outfit, framing, lighting and environment. No random replacement person, no face morphing, no duplicate face, no extra fingers, no distorted anatomy, no explicit sexual act, no graphic sexual content.';
+    return base + (kind === 'video'
+      ? 'Short realistic vertical video with subtle natural movement, breathing, blinking, hair and clothing motion. '
+      : '') +
+      variant + '. ' + (userPrompt || (kind === 'video' ? 'spontaneous short selfie video' : 'spontaneous realistic selfie')) +
+      '.' + extra +
+      ' Keep the identity fixed. Change only pose, expression, clothing, framing, lighting and environment. No random replacement person, no face morphing, no distorted anatomy, no explicit sexual acts.';
   }
 
-
-  function dataUrlToBlob(data){const m=String(data).match(/^data:([^;]+);base64,(.*)$/);if(!m)throw Error('Image invalide');const bin=atob(m[2]),bytes=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)bytes[i]=bin.charCodeAt(i);return new Blob([bytes],{type:m[1]})}
-  async function referenceEdit(g,prompt,model,size){
-    if(!g?.photo) throw Error('Image de profil absente');
-    const selectedModel = model==='flux'||model==='zimage'||model==='klein' ? 'kontext' : (model || 'kontext');
-
-    // Ne pas télécharger la photo dans Safari : Pollinations accepte directement
-    // une URL d'image de référence via le paramètre "image". Cela évite les
-    // erreurs CORS/Safari et conserve la photo de profil comme référence.
-    const params = new URLSearchParams();
-    params.set('model', selectedModel);
-    const dims = String(size || '768x1024').split('x');
-    params.set('width', dims[0] || '768');
-    params.set('height', dims[1] || '1024');
-    params.set('nologo', 'true');
-    params.set('safe', 'false');
-    params.set('image', String(g.photo));
-
-    const url = 'https://gen.pollinations.ai/image/' + encodeURIComponent(prompt || 'Photorealistic selfie of the same adult woman') + '?' + params.toString();
-    const r = await fetch(url, {headers:{Authorization:'Bearer '+key()}});
-    if(!r.ok){
-      const raw = await r.text().catch(()=> '');
-      throw Error('HTTP '+r.status+(raw?' — '+raw.slice(0,180):''));
+  async function responseBlob(r, expected) {
+    if (!r.ok) {
+      const raw = await r.text().catch(()=>'');
+      let msg = '';
+      try { msg = JSON.parse(raw)?.error?.message || ''; } catch {}
+      if (r.status === 401) throw Error('clé API invalide ou refusée');
+      if (r.status === 402) throw Error('budget Pollen insuffisant');
+      throw Error('HTTP '+r.status+(msg ? ' — '+msg : ''));
     }
     const blob = await r.blob();
-    if(!blob.type || !blob.type.startsWith('image/')) throw Error('Réponse image invalide');
+    if (!blob.type.startsWith(expected)) throw Error('réponse '+expected+' invalide');
     return URL.createObjectURL(blob);
   }
 
-  window.generateGallery = async function(){
-    if(!key())return openAI('⚠️ Connecte l\'IA.'); const g=currentGirl();if(!g)return;
-    const grid=$('galleryGrid');$('galleryModal').style.display='block';grid.innerHTML='<div style="color:#aaa;padding:20px">Création de 6 photos cohérentes…</div>';
-    const urls=[];const size=get('imageSize')||'768x1024';
-    for(let i=0;i<6;i++){try{urls.push(await referenceEdit(g,buildPhotoPrompt(g,'selfie '+(i+1)+', angle différent, même visage et mêmes traits, contexte quotidien crédible',getIntensity()),get('imageModel'),size));}catch(e){console.warn(e)}}
-    grid.innerHTML=urls.map((u,j)=>'<img src="'+u+'" alt="'+esc(g.name)+' photo '+(j+1)+'" loading="lazy">').join('')||'<div style="color:#aaa;padding:20px">Aucune photo générée.</div>';
-  };
-  window.generatePhoto = async function(prompt='') {
-    if(!key())return openAI('⚠️ Connecte l\'IA.'); const g=currentGirl();if(!g)return; addTyping();
-    try{const p=buildPhotoPrompt(g,prompt||'selfie smartphone réaliste du moment, même visage que la photo de profil, expression naturelle',getIntensity());const src=await referenceEdit(g,p,get('imageModel'),get('imageSize')||'768x1024');removeTyping();history[g.id]=history[g.id]||[];history[g.id].push({role:'ai',text:'📷',image:src});save();renderMessages();}
-    catch(e){removeTyping();history[g.id]=history[g.id]||[];history[g.id].push({role:'ai',text:'Erreur photo: '+(e.message||'?')});save();renderMessages();}
-  };
+  async function generateImage(g, prompt) {
+    if (!g?.photo) throw Error('photo de profil absente');
+    const dims = size().split('x');
+    const params = new URLSearchParams({
+      model: imageModel(),
+      width: dims[0] || '768',
+      height: dims[1] || '1024',
+      nologo: 'true',
+      image: g.photo
+    });
+    const url = 'https://gen.pollinations.ai/image/'+encodeURIComponent(prompt)+'?'+params;
+    const r = await fetch(url, {headers:{Authorization:'Bearer '+apiKey()}});
+    return responseBlob(r, 'image/');
+  }
 
-  window.generateVideo = async function(prompt='') {
-    if (!key()) return openAI('⚠️ Connecte l\'IA.');
-    const g = currentGirl(); if (!g) return;
-    const p = buildPhotoPrompt(g, prompt, getIntensity())+', short video, natural body motion, photorealistic';
+  async function generateVideo(g, prompt) {
+    if (!g?.photo) throw Error('photo de profil absente');
+    const params = new URLSearchParams({
+      model: videoModel(),
+      duration: '4',
+      aspectRatio: '9:16',
+      'image[0]': g.photo
+    });
+    const url = 'https://gen.pollinations.ai/video/'+encodeURIComponent(prompt)+'?'+params;
+    const r = await fetch(url, {headers:{Authorization:'Bearer '+apiKey()}});
+    return responseBlob(r, 'video/');
+  }
+
+  window.generatePhoto = async function(userPrompt='') {
+    const g = currentGirl();
+    if (!g) return;
+    if (!apiKey()) return window.openAI?.('Clé IA manquante.');
     addTyping();
     try {
-      const selected = get('videoModel') || 'wan-fast';
-      if(selected==='freeai-wan-i2v'){
-        throw Error('Free.ai nécessite une clé gratuite dédiée : configure-la côté serveur avant activation.');
-      }
-      const model = selected;
-      const url = 'https://gen.pollinations.ai/video/'+encodeURIComponent(p)+'?model='+encodeURIComponent(model)+'&duration=4&aspectRatio=9:16&image%5B0%5D='+encodeURIComponent(g.photo);
-      const r = await fetch(url,{headers:{Authorization:'Bearer '+key()}});
-      if (!r.ok) { const raw=await r.text().catch(()=>''); if(r.status===402) throw Error('HTTP 402 — solde/budget Pollen insuffisant pour la vidéo'); if(r.status===400) throw Error('HTTP 400 — modèle vidéo ou paramètres refusés'); throw Error('HTTP '+r.status+(raw?' — '+raw.slice(0,100):'')); }
-      const blob = await r.blob();
-      const src = URL.createObjectURL(blob);
+      const src = await generateImage(g, promptFor(g, userPrompt, 'image'));
       removeTyping();
-      history[g.id] = history[g.id]||[]; history[g.id].push({role:'ai',text:'🎥',video:src}); save(); renderMessages();
+      addResult(g, {role:'ai', text:'📷', image:src});
+    } catch(e) { fail(g, 'photo', e); }
+  };
+
+  window.generateVideo = async function(userPrompt='') {
+    const g = currentGirl();
+    if (!g) return;
+    if (!apiKey()) return window.openAI?.('Clé IA manquante.');
+    addTyping();
+    try {
+      const src = await generateVideo(g, promptFor(g, userPrompt, 'video'));
+      removeTyping();
+      addResult(g, {role:'ai', text:'🎥', video:src});
+    } catch(e) { fail(g, 'vidéo', e); }
+  };
+
+  // Gallery = four variations, using the exact same single image path.
+  window.generateGallery = async function() {
+    const g = currentGirl();
+    const grid = document.getElementById('galleryGrid');
+    if (!g || !grid) return;
+    grid.innerHTML = '<div style="color:#aaa;padding:20px">Génération…</div>';
+    try {
+      const prompts = ['selfie naturel','miroir avant de sortir','soirée élégante','week-end à la plage'];
+      const urls = await Promise.all(prompts.map(p => generateImage(g, promptFor(g,p,'image'))));
+      grid.innerHTML = urls.map((u,i) =>
+        '<div style="margin-bottom:12px"><img src="'+u+'" alt="Photo '+(i+1)+'" style="width:100%;border-radius:14px;display:block"><div style="color:#aaa;font-size:11px;margin-top:5px">Photo '+(i+1)+'</div></div>'
+      ).join('');
     } catch(e) {
-      removeTyping();
-      history[g.id] = history[g.id]||[]; history[g.id].push({role:'ai',text:'Erreur vidéo: '+(e.message||'indisponible')}); save(); renderMessages();
+      grid.innerHTML = '<div style="color:#f88;padding:20px">Erreur : '+String(e.message||e)+'</div>';
     }
   };
-})();
 
-/* VELVET_GALLERY_UI_LOADER */
-(function(){var s=document.createElement("script");s.src="./gallery.js";s.onload=function(){var u=document.createElement("script");u.src="./gallery-ui.js";document.body.appendChild(u)};document.head.appendChild(s)})();
+  // Tiny IA status button. No modal, no duplicate settings engine.
+  function installStatus() {
+    let b = document.getElementById('aiKeyButton');
+    if (!b) {
+      b = document.createElement('button');
+      b.id='aiKeyButton';
+      b.textContent='🧠 IA';
+      b.style.cssText='position:fixed;right:12px;top:calc(12px + env(safe-area-inset-top));z-index:9999;border:1px solid #302b2d;background:#151314;color:#eee;border-radius:12px;padding:8px 10px;font-weight:800;';
+      document.body.appendChild(b);
+    }
+    b.title = 'IA prête — photo et vidéo';
+    b.onclick = async () => {
+      b.textContent='IA…';
+      try {
+        const r=await fetch('https://gen.pollinations.ai/image/test?model=kontext&width=64&height=64&nologo=true',{headers:{Authorization:'Bearer '+apiKey()}});
+        b.textContent=r.ok?'🧠 IA ✓':'🧠 IA ✕';
+      } catch { b.textContent='🧠 IA ✕'; }
+      setTimeout(()=>b.textContent='🧠 IA',1600);
+    };
+  }
+
+  function installSimpleSettings() {
+    const settings=document.getElementById('settings');
+    if (!settings || document.getElementById('velvet-simple-ai')) return;
+    const box=document.createElement('div');
+    box.id='velvet-simple-ai';
+    box.style.cssText='margin:8px 0;padding:10px 0;border-top:1px solid #302b2d;border-bottom:1px solid #302b2d';
+    box.innerHTML =
+      '<div style="font-size:11px;color:#aaa;font-weight:800;margin-bottom:7px">IA · Photo & Vidéo</div>'+
+      '<select id="vx-model" style="width:100%;margin:4px 0;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:8px">'+
+      '<option value="kontext">Kontext · référence visage</option><option value="flux">Flux · photo</option></select>'+
+      '<select id="vx-video" style="width:100%;margin:4px 0;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:8px">'+
+      '<option value="alibaba/wan-2.2-fast">Wan 2.2 Fast · vidéo</option><option value="google/veo-3.1-fast">Veo 3.1 Fast · vidéo</option></select>'+
+      '<div style="font-size:10px;color:#777;margin-top:6px">La photo du profil est utilisée automatiquement comme référence.</div>';
+    settings.insertBefore(box,settings.firstChild);
+    box.querySelector('#vx-model').value=imageModel();
+    box.querySelector('#vx-video').value=videoModel();
+    box.querySelector('#vx-model').onchange=e=>localStorage.setItem(CFG.model,e.target.value);
+    box.querySelector('#vx-video').onchange=e=>localStorage.setItem(CFG.video,e.target.value);
+  }
+
+  const oldToggle=window.toggleSettings;
+  window.toggleSettings=function(){
+    if(typeof oldToggle==='function') oldToggle();
+    setTimeout(installSimpleSettings,30);
+  };
+
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',()=>{installStatus();installSimpleSettings();});
+  else { installStatus(); installSimpleSettings(); }
+})();
