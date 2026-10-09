@@ -41,11 +41,11 @@
     const lvl = level(g);
     const intensity = {
       soft: 'casual and natural',
-      flirt: 'playful and flirty',
-      sensuel: 'sensual and elegant',
-      seducteur: 'very seductive and glamorous',
-      adulte: 'bold adult boudoir mood, provocative but non-explicit'
-    }[lvl] || 'sensual and elegant';
+      flirt: 'playful, cheeky and flirty',
+      sensuel: 'sensual, intimate and elegant',
+      seducteur: 'bold, daring, provocative and glamorous adult boudoir mood',
+      adulte: 'maximum daring adult editorial, rebellious, provocative, intimate boudoir atmosphere, lingerie or implied nudity only, non-explicit'
+    }[lvl] || 'bold, sensual and elegant';
 
     const base =
       'Photorealistic smartphone photo/video of the SAME fictional adult woman '+g.name+
@@ -54,18 +54,18 @@
       intensity+'. ';
 
     const variants = [
-      'candid selfie at home',
-      'mirror selfie before going out',
-      'hotel-room selfie while getting ready',
-      'sunset balcony selfie',
-      'beach vacation selfie',
-      'night city selfie under ambient lights',
-      'cozy bedroom selfie in morning light',
-      'café selfie during a weekend outing',
-      'post-workout selfie in realistic sportswear',
-      'elegant evening outfit at a restaurant',
-      'rainy street selfie at night',
-      'bathroom mirror selfie wearing a robe'
+      'bold mirror selfie in a dramatic low-lit room, fashion-editorial attitude',
+      'luxury hotel-room boudoir portrait in elegant lingerie, tasteful framing',
+      'wet-hair after-shower portrait wrapped in a towel, suggestive but covered',
+      'nighttime balcony selfie with city lights and confident expression',
+      'dramatic beach-at-dusk portrait in a daring swimsuit',
+      'moody bedroom portrait with satin sheets and cinematic shadows, no nudity shown',
+      'high-fashion leather outfit, rebellious styling and direct gaze',
+      'intimate close-up selfie with tousled hair and a teasing expression',
+      'mirror selfie in an oversized shirt, bare legs, tasteful composition',
+      'dark editorial portrait in a fitted evening dress',
+      'rainy neon street portrait with provocative fashion styling',
+      'cinematic boudoir portrait in a silk robe'
     ];
     const variant = variants[Math.floor(Math.random()*variants.length)];
 
@@ -201,9 +201,9 @@
     box.innerHTML =
       '<div style="font-size:11px;color:#aaa;font-weight:800;margin-bottom:7px">IA · Photo & Vidéo</div>'+
       '<select id="vx-model" style="width:100%;margin:4px 0;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:8px">'+
-      '<option value="kontext">Kontext · référence visage</option><option value="flux">Flux · photo</option></select>'+
+      '<option value="tongyi-mai/z-image-turbo">Z-Image Turbo · rapide / audacieux</option><option value="black-forest-labs/flux.1-kontext-pro">Flux Kontext Pro · référence visage</option><option value="black-forest-labs/flux.1-schnell">Flux Schnell · rapide</option></select>'+
       '<select id="vx-video" style="width:100%;margin:4px 0;background:#1b191a;color:#ddd;border:1px solid #383235;border-radius:8px;padding:8px">'+
-      '<option value="alibaba/wan-2.2-fast">Wan 2.2 Fast · vidéo</option><option value="google/veo-3.1-fast">Veo 3.1 Fast · vidéo</option></select>'+
+      '<option value="alibaba/wan-2.2-fast">Wan 2.2 Fast · vidéo rapide</option><option value="bytedance/seedance-2.0-mini">Seedance 2.0 Mini · vidéo</option><option value="google/veo-3.1-fast">Veo 3.1 Fast · vidéo</option></select>'+
       '<div style="font-size:10px;color:#777;margin-top:6px">La photo du profil est utilisée automatiquement comme référence.</div>';
     settings.insertBefore(box,settings.firstChild);
     box.querySelector('#vx-model').value=imageModel();
