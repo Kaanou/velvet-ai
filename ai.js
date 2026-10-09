@@ -15,7 +15,7 @@
   const PUBLIC_KEY = 'sk_rs1x2fKZLGIFyEcatpez9OG5yGJayAKz';
   const apiKey = () => PUBLIC_KEY.startsWith('sk_') ? PUBLIC_KEY : (localStorage.getItem(CFG.key) || '');
 
-  const imageModel = () => localStorage.getItem(CFG.model) || 'kontext';
+  const imageModel = () => { const saved=localStorage.getItem(CFG.model); return (!saved || saved==='kontext' || saved==='flux') ? 'tongyi-mai/z-image-turbo' : saved; };
   const videoModel = () => localStorage.getItem(CFG.video) || 'alibaba/wan-2.2-fast';
   const size = () => localStorage.getItem(CFG.size) || '768x1024';
 
